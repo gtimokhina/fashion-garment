@@ -1,0 +1,43 @@
+# Example evaluation dataset
+
+Place **images** under `images/` and list them with gold labels in **`labels.json`**.
+
+## `labels.json` schema
+
+Top level:
+
+| Field       | Type   | Description |
+|------------|--------|-------------|
+| `version`  | number | Format version (currently `1`). |
+| `items`    | array  | One object per image. |
+
+Each **item**:
+
+| Field     | Type   | Description |
+|----------|--------|-------------|
+| `image`  | string | Path to the file **relative to this dataset directory** (e.g. `images/coat_01.jpg`). |
+| `labels` | object | Ground-truth strings for evaluation (see below). |
+
+Each **label** value is a string. Use empty string or omit a key if you do not want that field scored for that image.
+
+### Label keys (compared to classifier output)
+
+| Key in JSON    | Compared to model field | Notes |
+|----------------|---------------------------|--------|
+| `garment_type` | `garment_type`            | Normalized exact match. |
+| `style`        | `style`                   | Normalized exact match. |
+| `occasion`     | `occasion`                | Normalized exact match. |
+| `color`        | `color_palette`           | Exact match after normalization, or (default) every comma-separated token in the label appears in the prediction. |
+
+The classifier does not emit a field named `color`; gold `color` is compared to **`color_palette`**.
+
+## Example
+
+See [`labels.example.json`](labels.example.json). Copy it to `labels.json`, add real images under `images/`, and run:
+
+```bash
+cd app/backend && source .venv/bin/activate   # optional
+python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset
+```
+
+Requires `OPENAI_API_KEY` (e.g. in `app/backend/.env`).

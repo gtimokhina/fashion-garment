@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "image": "images/trench_01.jpg",
+      "labels": {
+        "garment_type": "trench coat",
+        "style": "minimalist",
+        "occasion": "work",
+        "color": "beige, black"
+      }
+    },
+    {
+      "image": "images/sneakers_02.jpg",
+      "labels": {
+        "garment_type": "sneakers",
+        "style": "streetwear",
+        "occasion": "casual",
+        "color": "white"
+      }
+    }
+  ]
+}

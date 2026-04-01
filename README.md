@@ -79,7 +79,14 @@ The browser talks only to **Next.js** for pages and static assets. Client-side `
 
 ## Evaluation
 
-See `eval/` for scripts, labeled data, and instructions. A short summary of per-attribute accuracy and model strengths/limitations will be added here or linked from `eval/`.
+See `eval/` for scripts and labeled data. **Classifier eval** (gold labels vs model output):
+
+```bash
+cd app/backend && source .venv/bin/activate   # optional
+python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset
+```
+
+Dataset format: [`eval/data/example_dataset/README.md`](eval/data/example_dataset/README.md) and [`labels.example.json`](eval/data/example_dataset/labels.example.json). Requires `OPENAI_*` in `app/backend/.env`. Use `--verbose` for per-image tables and `--output-json path` for machine-readable results.
 
 **Bulk fashion images (Pexels):** use the official API (not the search webpage). Get a free key at [pexels.com/api](https://www.pexels.com/api/), add `PEXELS_API_KEY=...` to `app/backend/.env` (same file as the backend), then:
 

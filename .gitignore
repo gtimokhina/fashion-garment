@@ -48,3 +48,7 @@ app/backend/uploads/
 # Eval: downloaded Pexels binaries (keep .gitkeep only)
 eval/data/pexels_fashion/*
 !eval/data/pexels_fashion/.gitkeep
+
+# Eval: local test images (keep .gitkeep only)
+eval/data/example_dataset/images/*
+!eval/data/example_dataset/images/.gitkeep
