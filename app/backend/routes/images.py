@@ -29,7 +29,15 @@ class ImageOut(BaseModel):
     created_at: datetime
     semantic_score: Optional[float] = Field(
         default=None,
-        description="Cosine similarity to the search query when semantic search is used (omit otherwise).",
+        description="Embedding cosine similarity (0–1) when semantic/hybrid search is used.",
+    )
+    keyword_score: Optional[float] = Field(
+        default=None,
+        description="Lexical match score 0 or 1 when hybrid search is used.",
+    )
+    combined_score: Optional[float] = Field(
+        default=None,
+        description="Hybrid ranking score 0–1 when hybrid search is used (0.5×keyword + 0.5×embedding).",
     )
 
     model_config = {"from_attributes": False}
@@ -41,9 +49,13 @@ class ImageListResponse(BaseModel):
         default=None,
         description="True when the request used semantic=true with a non-empty query.",
     )
+    hybrid_mode: Optional[bool] = Field(
+        default=None,
+        description="True when hybrid (keyword + embedding) ranking was used.",
+    )
     keyword_fallback: Optional[bool] = Field(
         default=None,
-        description="True when semantic search fell back to substring matching (no strong embedding matches).",
+        description="True when search fell back to SQL substring matching (embedding-only or hybrid).",
     )
 
 
@@ -91,6 +103,8 @@ def _to_out(
     row: Image,
     *,
     semantic_score: Optional[float] = None,
+    keyword_score: Optional[float] = None,
+    combined_score: Optional[float] = None,
 ) -> ImageOut:
     return ImageOut(
         id=row.id,
@@ -101,6 +115,8 @@ def _to_out(
         annotations=row.annotations,
         created_at=row.created_at,
         semantic_score=semantic_score,
+        keyword_score=keyword_score,
+        combined_score=combined_score,
     )
 
 
@@ -145,16 +161,21 @@ def list_images(
     search: Optional[str] = None,
     semantic: bool = Query(
         False,
-        description="When true with non-empty q/search, rank by embedding similarity to descriptions (OpenAI).",
+        description="When true with non-empty q/search, use embedding-based ranking (and hybrid by default).",
+    ),
+    hybrid: bool = Query(
+        True,
+        description="With semantic=true: combine keyword (LIKE-style) and embedding scores; false = embedding-only.",
     ),
 ):
     """
     List images. Metadata filters: case-insensitive substring on JSON fields.
     ``q`` / ``search`` matches **description**, annotation **notes**, and any **tag**
     (substring). ``color`` is shorthand for ``color_palette``.
-    With ``semantic=true`` and a non-empty ``q``/``search``, results use embedding
-    similarity on descriptions (see ``semantic_score`` on each item). Weak matches are
-    dropped; if none remain, substring search is used (``keyword_fallback`` on the response).
+    With ``semantic=true`` and non-empty ``q``: default **hybrid** ranking
+    ``combined_score = 0.5 * keyword_score + 0.5 * embedding_similarity`` (see each item).
+    Set ``hybrid=false`` for embedding-only thresholding (legacy). ``keyword_fallback``
+    if the API falls back to SQL substring-only results.
     """
     palette: Optional[str] = None
     if color_palette not in (None, ""):
@@ -169,6 +190,37 @@ def list_images(
         desc = search
 
     if semantic and desc and str(desc).strip():
+        if hybrid:
+            result = image_filters.query_images_hybrid(
+                session,
+                garment_type=garment_type,
+                style=style,
+                occasion=occasion,
+                color_palette=palette,
+                search_query=desc,
+            )
+            items_out = [
+                _to_out(
+                    request,
+                    r,
+                    semantic_score=e,
+                    keyword_score=k,
+                    combined_score=c,
+                )
+                for r, e, k, c in zip(
+                    result.items,
+                    result.embedding_scores,
+                    result.keyword_scores,
+                    result.combined_scores,
+                )
+            ]
+            return ImageListResponse(
+                items=items_out,
+                semantic_mode=True,
+                hybrid_mode=True,
+                keyword_fallback=result.used_keyword_fallback,
+            )
+
         result = image_filters.query_images_semantic(
             session,
             garment_type=garment_type,
@@ -184,6 +236,7 @@ def list_images(
         return ImageListResponse(
             items=items_out,
             semantic_mode=True,
+            hybrid_mode=False,
             keyword_fallback=result.used_keyword_fallback,
         )
 

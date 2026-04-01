@@ -8,7 +8,15 @@ from sqlalchemy import String, and_, cast, func, or_, select, text
 from sqlalchemy.orm import Session
 
 from models.image import Image
-from services.config import semantic_search_min_score, semantic_search_relative_to_best
+from services.config import (
+    hybrid_min_combined_score,
+    semantic_search_min_score,
+    semantic_search_relative_to_best,
+)
+
+# Hybrid search weights (fixed 50/50; see ``query_images_hybrid`` docstring).
+_HYBRID_W_KEYWORD = 0.5
+_HYBRID_W_EMBEDDING = 0.5
 
 # json_extract paths for AI metadata (column `metadata` in DB, `meta` on model).
 _JSON_PATHS = {
@@ -38,6 +46,33 @@ def _json_substring_match(column_path: str, needle: str):
         cast(func.coalesce(func.json_extract(Image.meta, column_path), ""), String)
     )
     return blob.like(f"%{inner}%", escape="\\")
+
+
+def _keyword_match_substring(row: Image, raw_needle: str) -> bool:
+    """
+    Same intent as the SQL ``LIKE`` / ``instr`` branch in ``query_images``:
+    case-insensitive substring in description, annotation notes, or any tag.
+    """
+    if not raw_needle or not str(raw_needle).strip():
+        return False
+    low = raw_needle.strip().lower()
+    if low in (row.description or "").lower():
+        return True
+    ann = row.annotations if isinstance(row.annotations, dict) else {}
+    notes = ann.get("notes")
+    if isinstance(notes, str) and low in notes.lower():
+        return True
+    tags = ann.get("tags")
+    if isinstance(tags, list):
+        for t in tags:
+            if isinstance(t, str) and low in t.lower():
+                return True
+    return False
+
+
+def _keyword_score(row: Image, raw_needle: str) -> float:
+    """Binary keyword relevance: 1.0 if any text field matches, else 0.0 (see hybrid docstring)."""
+    return 1.0 if _keyword_match_substring(row, raw_needle) else 0.0
 
 
 def query_images(
@@ -92,11 +127,118 @@ def query_images(
 
 @dataclass
 class SemanticSearchResult:
-    """Semantic search: filtered rows with parallel cosine scores (same order)."""
+    """Embedding-only search: cosine scores parallel to ``items`` (see ``query_images_semantic``)."""
 
     items: list[Image]
     scores: list[float]
     used_keyword_fallback: bool = False
+
+
+@dataclass
+class HybridSearchResult:
+    """Hybrid search: parallel score lists aligned with ``items`` (see ``query_images_hybrid``)."""
+
+    items: list[Image]
+    embedding_scores: list[float]
+    keyword_scores: list[float]
+    combined_scores: list[float]
+    used_keyword_fallback: bool = False
+
+
+def query_images_hybrid(
+    session: Session,
+    *,
+    garment_type: str | None = None,
+    style: str | None = None,
+    occasion: str | None = None,
+    color_palette: str | None = None,
+    search_query: str | None = None,
+) -> HybridSearchResult:
+    """
+    **Hybrid ranking** over facet-filtered candidates (no SQL text filter on ``q``).
+
+    For each row we compute:
+
+    - **keyword_score** ∈ {0, 1}: ``1`` if the query appears as a case-insensitive substring
+      in the **description**, annotation **notes**, or any **tag** — mirroring the keyword
+      branch of ``query_images`` (SQL ``LIKE`` / ``instr`` semantics), else ``0``.
+
+    - **embedding_sim** ∈ [0, 1]: cosine similarity between the query text embedding and the
+      stored ``description_embedding`` (L2-normalized vectors). ``0`` if there is no embedding.
+
+    - **combined_score** = ``0.5 * keyword_score + 0.5 * embedding_sim`` — equal weight to
+      lexical overlap and semantic similarity so explicit keyword hits are boosted while
+      paraphrases / synonyms can still rank via embeddings.
+
+    Rows are sorted by ``combined_score`` descending. Rows with ``combined_score`` below
+    ``HYBRID_MIN_COMBINED_SCORE`` are dropped. If none remain, we fall back to pure SQL
+    keyword filtering (same facets + substring ``q``) and return that list with scores zeroed.
+    """
+    from services import embeddings as emb
+
+    q_raw = (search_query or "").strip()
+    candidates = query_images(
+        session,
+        garment_type=garment_type,
+        style=style,
+        occasion=occasion,
+        color_palette=color_palette,
+        description_query=None,
+    )
+    if not q_raw:
+        z = [0.0] * len(candidates)
+        return HybridSearchResult(
+            items=candidates,
+            embedding_scores=z,
+            keyword_scores=z,
+            combined_scores=z,
+            used_keyword_fallback=False,
+        )
+
+    q_emb = emb.embed_text(q_raw)
+    min_combined = hybrid_min_combined_score()
+
+    scored: list[tuple[Image, float, float, float]] = []
+    for row in candidates:
+        kw = _keyword_score(row, q_raw)
+        emb_sim = 0.0
+        vec = row.description_embedding
+        if vec and isinstance(vec, list):
+            try:
+                emb_sim = emb.cosine_similarity(q_emb, [float(x) for x in vec])
+            except (TypeError, ValueError):
+                emb_sim = 0.0
+        combined = _HYBRID_W_KEYWORD * kw + _HYBRID_W_EMBEDDING * emb_sim
+        scored.append((row, emb_sim, kw, combined))
+
+    scored.sort(key=lambda x: -x[3])
+    kept = [t for t in scored if t[3] >= min_combined]
+
+    if not kept:
+        rows = query_images(
+            session,
+            garment_type=garment_type,
+            style=style,
+            occasion=occasion,
+            color_palette=color_palette,
+            description_query=q_raw,
+        )
+        z = [0.0] * len(rows)
+        return HybridSearchResult(
+            items=rows,
+            embedding_scores=z,
+            keyword_scores=z,
+            combined_scores=z,
+            used_keyword_fallback=True,
+        )
+
+    return HybridSearchResult(
+        items=[t[0] for t in kept],
+        embedding_scores=[t[1] for t in kept],
+        keyword_scores=[t[2] for t in kept],
+        combined_scores=[t[3] for t in kept],
+        used_keyword_fallback=False,
+    )
 
 
 def query_images_semantic(

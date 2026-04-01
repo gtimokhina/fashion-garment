@@ -15,8 +15,12 @@ type ImageItem = {
   metadata: Record<string, string>;
   annotations: Record<string, unknown>;
   created_at: string;
-  /** Cosine similarity to query when semantic search is used (0–1). */
+  /** Embedding cosine similarity (0–1) when semantic / hybrid search is used. */
   semantic_score?: number | null;
+  /** Lexical match 0 or 1 when hybrid search is used. */
+  keyword_score?: number | null;
+  /** Hybrid combined score: 0.5×keyword + 0.5×embedding when hybrid mode. */
+  combined_score?: number | null;
 };
 
 type Facets = {
@@ -159,7 +163,14 @@ export default function GalleryPage() {
     setItems((prev) =>
       prev
         ? prev.map((x) =>
-            x.id === row.id ? { ...row, semantic_score: x.semantic_score } : x,
+            x.id === row.id
+              ? {
+                  ...row,
+                  semantic_score: x.semantic_score,
+                  keyword_score: x.keyword_score,
+                  combined_score: x.combined_score,
+                }
+              : x,
           )
         : null,
     );
@@ -173,8 +184,9 @@ export default function GalleryPage() {
             Gallery
           </h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Filter by AI metadata. Search matches text in descriptions, notes, and tags. Semantic
-            mode uses embeddings and drops weak matches (see match % on each card).
+            Filter by AI metadata. With <strong>Semantic search</strong>, results are ranked by a{" "}
+            <strong>hybrid score</strong> (50% keyword overlap + 50% description embedding similarity;
+            see Score % on cards).
           </p>
         </div>
 
@@ -197,7 +209,7 @@ export default function GalleryPage() {
               onChange={(e) => setSemanticSearch(e.target.checked)}
               className="rounded border-zinc-400 text-blue-600 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-900"
             />
-            <span title="Ranks by similarity to your query; only confident matches are shown (tunable via SEMANTIC_SEARCH_* in backend .env).">
+            <span title="Hybrid ranking: 0.5×keyword (description/notes/tags substring) + 0.5×embedding cosine. Tunable via HYBRID_* and SEMANTIC_* in backend .env.">
               Semantic search
             </span>
           </label>
@@ -298,7 +310,7 @@ export default function GalleryPage() {
           <>
             {keywordFallback && semanticSearch && debouncedQ.trim() ? (
               <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100/95">
-                No strong embedding matches for this query — showing text matches (description,
+                No rows met the hybrid score threshold — showing plain text matches (description,
                 notes, tags) instead.
               </p>
             ) : null}
@@ -312,14 +324,25 @@ export default function GalleryPage() {
                   key={img.id}
                   className="group relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm ring-1 ring-black/[0.04] transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:ring-white/[0.06]"
                 >
-                  {typeof img.semantic_score === "number" &&
-                  img.semantic_score > 0 &&
+                  {typeof img.combined_score === "number" &&
                   semanticSearch &&
                   debouncedQ.trim() &&
                   !keywordFallback ? (
                     <span
+                      className="absolute left-3 top-3 z-10 max-w-[11rem] rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-blue-700 shadow-sm ring-1 ring-blue-200/80 dark:bg-zinc-900/90 dark:text-blue-300 dark:ring-blue-900/60"
+                      title={`Combined = 0.5×keyword + 0.5×embedding. Keyword=${((img.keyword_score ?? 0) * 100).toFixed(0)}%, embedding=${((img.semantic_score ?? 0) * 100).toFixed(0)}%.`}
+                    >
+                      Score {(img.combined_score * 100).toFixed(0)}%
+                    </span>
+                  ) : typeof img.semantic_score === "number" &&
+                    img.semantic_score > 0 &&
+                    semanticSearch &&
+                    debouncedQ.trim() &&
+                    !keywordFallback &&
+                    img.combined_score == null ? (
+                    <span
                       className="absolute left-3 top-3 z-10 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-blue-700 shadow-sm ring-1 ring-blue-200/80 dark:bg-zinc-900/90 dark:text-blue-300 dark:ring-blue-900/60"
-                      title="Cosine similarity between your query and the image description embedding"
+                      title="Embedding-only mode (hybrid=false): cosine similarity to query embedding"
                     >
                       Match {(img.semantic_score * 100).toFixed(0)}%
                     </span>

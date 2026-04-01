@@ -62,3 +62,8 @@ def semantic_search_min_score() -> float:
 def semantic_search_relative_to_best() -> float:
     """Also require score >= this fraction of the best match (reduces long-tail junk)."""
     return _env_float("SEMANTIC_SEARCH_RELATIVE_TO_BEST", "0.88", clamp=(0.5, 1.0))
+
+
+def hybrid_min_combined_score() -> float:
+    """Minimum hybrid combined score (0–1) to keep a row; below → keyword-SQL fallback."""
+    return _env_float("HYBRID_MIN_COMBINED_SCORE", "0.25", clamp=(0.0, 1.0))
