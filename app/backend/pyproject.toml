@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "fashion-garment-backend"
+version = "0.1.0"
+description = "FastAPI backend for fashion garment inspiration app"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+fastapi = ">=0.115.0"
+uvicorn = { version = ">=0.32.0", extras = ["standard"] }
+sqlmodel = ">=0.0.22"
+python-multipart = ">=0.0.9"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

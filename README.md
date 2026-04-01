@@ -11,7 +11,7 @@ Design teams collect large numbers of inspiration photos; this project explores 
 | Layer | Technology |
 |--------|------------|
 | Frontend | Next.js (App Router, TypeScript, Tailwind) in [`app/frontend`](app/frontend) |
-| Backend | FastAPI + SQLModel + SQLite in [`app/backend`](app/backend) |
+| Backend | FastAPI + SQLModel + SQLite in [`app/backend`](app/backend) (`main.py`, `routes/`, `services/`, `models/`) |
 | Database | SQLite file under `app/backend/data/` (created on first run) |
 
 ## Prerequisites
@@ -28,7 +28,7 @@ cd app/backend
 python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn garment_api.main:app --reload --host 127.0.0.1 --port 8000
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)  
@@ -47,7 +47,9 @@ cp .env.example .env.local   # optional; defaults to http://127.0.0.1:8000
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The home page includes a small **API status** panel that calls `/health` on the backend (start the backend first, or you will see “unreachable”).
+Open [http://localhost:3000](http://localhost:3000). Use **Upload** and **Gallery** in the nav. The home page includes an **API status** panel that calls `/health` (start the backend first, or you will see “unreachable”).
+
+Dependencies: install with **`pip install -r requirements.txt`** or, if you use Poetry, **`poetry install`** from `app/backend` (see [`pyproject.toml`](app/backend/pyproject.toml)).
 
 ### Environment
 
@@ -59,7 +61,7 @@ Open [http://localhost:3000](http://localhost:3000). The home page includes a sm
 | Path | Purpose |
 |------|---------|
 | `app/frontend/` | Next.js UI. |
-| `app/backend/` | FastAPI app package `garment_api`, SQLite under `data/`. |
+| `app/backend/` | FastAPI (`main.py`, `routes/`, `services/`, `models/`), SQLite under `data/`, uploads under `uploads/`. |
 | `eval/` | Model evaluation scripts and labeled test set (50–100 images, gold attributes). |
 | `tests/` | Unit, integration, and end-to-end tests. |
 | `tests/unit/` | Unit tests. |

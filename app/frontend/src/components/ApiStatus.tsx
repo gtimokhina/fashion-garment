@@ -58,7 +58,7 @@ export function ApiStatus() {
       <p className="mt-2 text-xs text-zinc-500">
         {healthUrl()} — start backend with{" "}
         <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-900">
-          uvicorn garment_api.main:app --reload
+          uvicorn main:app --reload
         </code>{" "}
         from <code className="rounded bg-zinc-100 px-1 dark:bg-zinc-900">app/backend</code>
       </p>

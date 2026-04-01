@@ -1,10 +1,9 @@
-from __future__ import annotations
-
 from collections.abc import Generator
 
 from sqlmodel import Session, SQLModel, create_engine
 
-from garment_api.config import database_path_from_url, get_database_url, sqlite_connect_args
+from models.image import ImageRecord  # noqa: F401 — register with metadata
+from services.config import database_path_from_url, get_database_url, sqlite_connect_args
 
 _database_url = get_database_url()
 _db_path = database_path_from_url(_database_url)

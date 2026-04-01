@@ -1,7 +1,8 @@
-from __future__ import annotations
-
 import os
 from pathlib import Path
+from typing import Optional
+
+BACKEND_ROOT = Path(__file__).resolve().parent.parent
 
 
 def get_database_url() -> str:
@@ -24,10 +25,13 @@ def sqlite_connect_args(url: str) -> dict:
     return {}
 
 
-def database_path_from_url(url: str) -> Path | None:
-    """If SQLite file URL, return path so parent dirs can be created."""
+def database_path_from_url(url: str) -> Optional[Path]:
     prefix = "sqlite:///"
     if not url.startswith(prefix):
         return None
     raw = url.removeprefix(prefix).lstrip("./")
-    return Path(__file__).resolve().parent.parent / raw
+    return BACKEND_ROOT / raw
+
+
+def upload_dir_path() -> Path:
+    return BACKEND_ROOT / "uploads"
