@@ -25,6 +25,13 @@ def create_image(
         annotations=annotations if annotations is not None else {},
     )
     session.add(row)
+    session.flush()
+    try:
+        from services.image_embedding import refresh_description_embedding
+
+        refresh_description_embedding(session, row)
+    except Exception:
+        row.description_embedding = None
     session.commit()
     session.refresh(row)
     return row
@@ -61,6 +68,13 @@ def update_image(
         row.meta = metadata
     if annotations is not None:
         row.annotations = annotations
+    if description is not None:
+        try:
+            from services.image_embedding import refresh_description_embedding
+
+            refresh_description_embedding(session, row)
+        except Exception:
+            row.description_embedding = None
     session.commit()
     session.refresh(row)
     return row

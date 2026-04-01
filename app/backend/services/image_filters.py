@@ -87,6 +87,46 @@ def query_images(
     return list(session.scalars(stmt).all())
 
 
+def query_images_semantic(
+    session: Session,
+    *,
+    garment_type: str | None = None,
+    style: str | None = None,
+    occasion: str | None = None,
+    color_palette: str | None = None,
+    search_query: str | None = None,
+) -> list[Image]:
+    """
+    Same facet filters as ``query_images``, but when ``search_query`` is non-empty,
+    rank results by cosine similarity of query embedding vs stored ``description_embedding``.
+    Rows without an embedding sort last.
+    """
+    from services import embeddings as emb
+
+    candidates = query_images(
+        session,
+        garment_type=garment_type,
+        style=style,
+        occasion=occasion,
+        color_palette=color_palette,
+        description_query=None,
+    )
+    if not search_query or not str(search_query).strip():
+        return candidates
+    q_emb = emb.embed_text(search_query.strip())
+
+    def score(row: Image) -> float:
+        vec = row.description_embedding
+        if not vec or not isinstance(vec, list):
+            return -1.0
+        try:
+            return emb.cosine_similarity(q_emb, [float(x) for x in vec])
+        except (TypeError, ValueError):
+            return -1.0
+
+    return sorted(candidates, key=score, reverse=True)
+
+
 def get_image_facets(session: Session) -> dict[str, list[str]]:
     out: dict[str, list[str]] = {}
     for facet_key, path in _FACET_KEYS.items():

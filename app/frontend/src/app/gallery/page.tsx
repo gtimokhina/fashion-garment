@@ -36,6 +36,7 @@ function buildImagesQuery(params: {
   occasion: string;
   color_palette: string;
   q: string;
+  semantic: boolean;
 }): string {
   const p = new URLSearchParams();
   if (params.garment_type) p.set("garment_type", params.garment_type);
@@ -43,6 +44,7 @@ function buildImagesQuery(params: {
   if (params.occasion) p.set("occasion", params.occasion);
   if (params.color_palette) p.set("color_palette", params.color_palette);
   if (params.q) p.set("q", params.q);
+  if (params.semantic) p.set("semantic", "1");
   const qs = p.toString();
   return qs ? `?${qs}` : "";
 }
@@ -60,6 +62,7 @@ export default function GalleryPage() {
   const [colorPalette, setColorPalette] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
+  const [semanticSearch, setSemanticSearch] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(searchInput), 320);
@@ -73,7 +76,14 @@ export default function GalleryPage() {
   }, []);
 
   const loadImages = useCallback(
-    async (q: { garment_type: string; style: string; occasion: string; color_palette: string; q: string }) => {
+    async (q: {
+      garment_type: string;
+      style: string;
+      occasion: string;
+      color_palette: string;
+      q: string;
+      semantic: boolean;
+    }) => {
       const res = await fetch(`${getApiBase()}/api/images${buildImagesQuery(q)}`);
       if (!res.ok) throw new Error(res.statusText);
       return res.json() as Promise<{ items: ImageItem[] }>;
@@ -107,6 +117,7 @@ export default function GalleryPage() {
       occasion,
       color_palette: colorPalette,
       q: debouncedQ,
+      semantic: semanticSearch,
     })
       .then((data) => {
         if (!cancelled) {
@@ -121,7 +132,7 @@ export default function GalleryPage() {
     return () => {
       cancelled = true;
     };
-  }, [loadImages, garmentType, style, occasion, colorPalette, debouncedQ]);
+  }, [loadImages, garmentType, style, occasion, colorPalette, debouncedQ, semanticSearch]);
 
   function clearFilters() {
     setGarmentType("");
@@ -130,10 +141,11 @@ export default function GalleryPage() {
     setColorPalette("");
     setSearchInput("");
     setDebouncedQ("");
+    setSemanticSearch(false);
   }
 
   const filtersActive =
-    Boolean(garmentType || style || occasion || colorPalette || debouncedQ);
+    Boolean(garmentType || style || occasion || colorPalette || debouncedQ || semanticSearch);
 
   function onAnnotationSaved(row: ImageItem) {
     setItems((prev) => (prev ? prev.map((x) => (x.id === row.id ? row : x)) : null));
@@ -147,7 +159,8 @@ export default function GalleryPage() {
             Gallery
           </h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Filter by AI metadata. Search covers description, your notes, and tags.
+            Filter by AI metadata. Search matches text in descriptions, notes, and tags; enable
+            semantic mode to rank by meaning (embeddings).
           </p>
         </div>
 
@@ -163,6 +176,17 @@ export default function GalleryPage() {
             placeholder="e.g. denim, studio…"
             className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
           />
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <input
+              type="checkbox"
+              checked={semanticSearch}
+              onChange={(e) => setSemanticSearch(e.target.checked)}
+              className="rounded border-zinc-400 text-blue-600 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-900"
+            />
+            <span title="Uses OpenAI embeddings on descriptions; best with a phrase or concept, not exact keywords only.">
+              Semantic search
+            </span>
+          </label>
         </div>
 
         <div className="space-y-4 rounded-2xl border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/40">

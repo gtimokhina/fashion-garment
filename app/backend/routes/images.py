@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -125,11 +125,17 @@ def list_images(
     color_palette: Optional[str] = None,
     q: Optional[str] = None,
     search: Optional[str] = None,
+    semantic: bool = Query(
+        False,
+        description="When true with non-empty q/search, rank by embedding similarity to descriptions (OpenAI).",
+    ),
 ):
     """
     List images. Metadata filters: case-insensitive substring on JSON fields.
     ``q`` / ``search`` matches **description**, annotation **notes**, and any **tag**
     (substring). ``color`` is shorthand for ``color_palette``.
+    With ``semantic=true`` and a non-empty ``q``/``search``, results are filtered by
+    facets only, then ordered by cosine similarity of text embeddings (descriptions).
     """
     palette: Optional[str] = None
     if color_palette not in (None, ""):
@@ -142,14 +148,25 @@ def list_images(
         desc = q
     elif search not in (None, ""):
         desc = search
-    rows = image_filters.query_images(
-        session,
-        garment_type=garment_type,
-        style=style,
-        occasion=occasion,
-        color_palette=palette,
-        description_query=desc,
-    )
+
+    if semantic and desc and str(desc).strip():
+        rows = image_filters.query_images_semantic(
+            session,
+            garment_type=garment_type,
+            style=style,
+            occasion=occasion,
+            color_palette=palette,
+            search_query=desc,
+        )
+    else:
+        rows = image_filters.query_images(
+            session,
+            garment_type=garment_type,
+            style=style,
+            occasion=occasion,
+            color_palette=palette,
+            description_query=desc,
+        )
     return ImageListResponse(items=[_to_out(request, r) for r in rows])
 
 
