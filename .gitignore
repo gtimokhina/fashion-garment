@@ -44,3 +44,7 @@ app/backend/venv/
 app/backend/data/*.db
 app/backend/data/*.sqlite*
 app/backend/uploads/
+
+# Eval: downloaded Pexels binaries (keep .gitkeep only)
+eval/data/pexels_fashion/*
+!eval/data/pexels_fashion/.gitkeep
