@@ -2,7 +2,10 @@ import os
 from pathlib import Path
 from typing import Optional
 
+from dotenv import load_dotenv
+
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(BACKEND_ROOT / ".env")
 
 
 def get_database_url() -> str:

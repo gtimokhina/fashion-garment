@@ -1,5 +1,9 @@
 """
 OpenAI GPT-4o vision classification for garment / fashion inspiration images.
+
+``OPENAI_API_KEY`` and optional ``OPENAI_MODEL`` are read from the process
+environment. Values can be set in ``app/backend/.env`` (loaded automatically
+via ``services.config``).
 """
 
 from __future__ import annotations
@@ -11,6 +15,8 @@ import os
 from pathlib import Path
 
 from openai import OpenAI
+
+from services import config as _env  # noqa: F401 — loads .env from BACKEND_ROOT before OpenAI reads os.environ
 from pydantic import BaseModel, Field, ValidationError
 
 # Keys the model must return (plus description).

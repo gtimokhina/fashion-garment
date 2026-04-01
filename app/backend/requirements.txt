@@ -3,3 +3,4 @@ uvicorn[standard]>=0.32.0
 sqlmodel>=0.0.22
 python-multipart>=0.0.9
 openai>=1.55.0
+python-dotenv>=1.0.0
