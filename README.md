@@ -87,6 +87,14 @@ python eval/scripts/download_pexels_fashion.py   # 50 × "fashion" → eval/data
 
 You can also `export PEXELS_API_KEY=...` to override. Options: `--count 50`, `--query fashion`, `--out path`.
 
+**Ingest downloads into the app** (same pipeline as the Upload page: save → classify → DB). Start the backend (`uvicorn` with `OPENAI_*` set), then:
+
+```bash
+python eval/scripts/ingest_pexels_to_backend.py
+```
+
+This POSTs each `pexels_*` file to `/api/images/upload`, then sets **tags** (`pexels`, `eval`, `stock`, plus any `--tags a,b`) and **notes** (default: provenance line; override with `--notes "..."`). Use `--dry-run` to list files only. `BACKEND_URL` or `--base-url` if the API is not on `http://127.0.0.1:8000`.
+
 ## Testing
 
 Commands will be added once pytest / frontend test runner are wired. Planned coverage:
