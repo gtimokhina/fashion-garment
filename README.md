@@ -112,6 +112,13 @@ This POSTs each `pexels_*` file to `/api/images/upload` (AI classification only)
 cd app/backend && python3 scripts/clear_all_annotations.py
 ```
 
+**Fill tags and notes from the stored AI description** (plus structured metadata): uses the same OpenAI model to suggest searchable tags—including synonyms grounded in the description—and a short notes line. Replaces existing annotations by default; add `--merge` to union tags and append notes.
+
+```bash
+cd app/backend && python3 scripts/sync_annotations_from_description.py --dry-run
+python3 scripts/sync_annotations_from_description.py
+```
+
 ## Testing
 
 Commands will be added once pytest / frontend test runner are wired. Planned coverage:
