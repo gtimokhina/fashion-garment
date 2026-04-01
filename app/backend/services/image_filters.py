@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from sqlalchemy import String, and_, cast, func, or_, select, text
 from sqlalchemy.orm import Session
 
 from models.image import Image
+from services.config import semantic_search_min_score, semantic_search_relative_to_best
 
 # json_extract paths for AI metadata (column `metadata` in DB, `meta` on model).
 _JSON_PATHS = {
@@ -87,6 +90,15 @@ def query_images(
     return list(session.scalars(stmt).all())
 
 
+@dataclass
+class SemanticSearchResult:
+    """Semantic search: filtered rows with parallel cosine scores (same order)."""
+
+    items: list[Image]
+    scores: list[float]
+    used_keyword_fallback: bool = False
+
+
 def query_images_semantic(
     session: Session,
     *,
@@ -95,14 +107,17 @@ def query_images_semantic(
     occasion: str | None = None,
     color_palette: str | None = None,
     search_query: str | None = None,
-) -> list[Image]:
+) -> SemanticSearchResult:
     """
-    Same facet filters as ``query_images``, but when ``search_query`` is non-empty,
-    rank results by cosine similarity of query embedding vs stored ``description_embedding``.
-    Rows without an embedding sort last.
+    Same facet filters as ``query_images`` (no substring ``q``). When ``search_query``
+    is non-empty, score each row by cosine similarity vs the query embedding, then
+    **drop** matches below a minimum score and below a fraction of the best score.
+    If nothing survives, fall back to keyword search (same facets + ``search_query``).
+    Rows without ``description_embedding`` are excluded from semantic results.
     """
     from services import embeddings as emb
 
+    q_raw = (search_query or "").strip()
     candidates = query_images(
         session,
         garment_type=garment_type,
@@ -111,20 +126,64 @@ def query_images_semantic(
         color_palette=color_palette,
         description_query=None,
     )
-    if not search_query or not str(search_query).strip():
-        return candidates
-    q_emb = emb.embed_text(search_query.strip())
+    if not q_raw:
+        return SemanticSearchResult(items=candidates, scores=[0.0] * len(candidates))
 
-    def score(row: Image) -> float:
+    q_emb = emb.embed_text(q_raw)
+    min_abs = semantic_search_min_score()
+    rel = semantic_search_relative_to_best()
+
+    scored: list[tuple[float, Image]] = []
+    for row in candidates:
         vec = row.description_embedding
         if not vec or not isinstance(vec, list):
-            return -1.0
+            continue
         try:
-            return emb.cosine_similarity(q_emb, [float(x) for x in vec])
+            s = emb.cosine_similarity(q_emb, [float(x) for x in vec])
         except (TypeError, ValueError):
-            return -1.0
+            continue
+        scored.append((s, row))
 
-    return sorted(candidates, key=score, reverse=True)
+    if not scored:
+        rows = query_images(
+            session,
+            garment_type=garment_type,
+            style=style,
+            occasion=occasion,
+            color_palette=color_palette,
+            description_query=q_raw,
+        )
+        return SemanticSearchResult(
+            items=rows,
+            scores=[0.0] * len(rows),
+            used_keyword_fallback=True,
+        )
+
+    scored.sort(key=lambda x: -x[0])
+    best = scored[0][0]
+    threshold = max(min_abs, best * rel)
+    kept = [(s, r) for s, r in scored if s >= threshold]
+
+    if not kept:
+        rows = query_images(
+            session,
+            garment_type=garment_type,
+            style=style,
+            occasion=occasion,
+            color_palette=color_palette,
+            description_query=q_raw,
+        )
+        return SemanticSearchResult(
+            items=rows,
+            scores=[0.0] * len(rows),
+            used_keyword_fallback=True,
+        )
+
+    return SemanticSearchResult(
+        items=[r for _, r in kept],
+        scores=[s for s, _ in kept],
+        used_keyword_fallback=False,
+    )
 
 
 def get_image_facets(session: Session) -> dict[str, list[str]]:

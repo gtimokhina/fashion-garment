@@ -15,6 +15,8 @@ type ImageItem = {
   metadata: Record<string, string>;
   annotations: Record<string, unknown>;
   created_at: string;
+  /** Cosine similarity to query when semantic search is used (0–1). */
+  semantic_score?: number | null;
 };
 
 type Facets = {
@@ -63,6 +65,7 @@ export default function GalleryPage() {
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [semanticSearch, setSemanticSearch] = useState(false);
+  const [keywordFallback, setKeywordFallback] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(searchInput), 320);
@@ -86,7 +89,10 @@ export default function GalleryPage() {
     }) => {
       const res = await fetch(`${getApiBase()}/api/images${buildImagesQuery(q)}`);
       if (!res.ok) throw new Error(res.statusText);
-      return res.json() as Promise<{ items: ImageItem[] }>;
+      return res.json() as Promise<{
+        items: ImageItem[];
+        keyword_fallback?: boolean | null;
+      }>;
     },
     [],
   );
@@ -122,6 +128,7 @@ export default function GalleryPage() {
       .then((data) => {
         if (!cancelled) {
           setItems(data.items);
+          setKeywordFallback(Boolean(data.keyword_fallback));
           setImagesError(null);
         }
       })
@@ -142,13 +149,20 @@ export default function GalleryPage() {
     setSearchInput("");
     setDebouncedQ("");
     setSemanticSearch(false);
+    setKeywordFallback(false);
   }
 
   const filtersActive =
     Boolean(garmentType || style || occasion || colorPalette || debouncedQ || semanticSearch);
 
   function onAnnotationSaved(row: ImageItem) {
-    setItems((prev) => (prev ? prev.map((x) => (x.id === row.id ? row : x)) : null));
+    setItems((prev) =>
+      prev
+        ? prev.map((x) =>
+            x.id === row.id ? { ...row, semantic_score: x.semantic_score } : x,
+          )
+        : null,
+    );
   }
 
   return (
@@ -159,8 +173,8 @@ export default function GalleryPage() {
             Gallery
           </h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Filter by AI metadata. Search matches text in descriptions, notes, and tags; enable
-            semantic mode to rank by meaning (embeddings).
+            Filter by AI metadata. Search matches text in descriptions, notes, and tags. Semantic
+            mode uses embeddings and drops weak matches (see match % on each card).
           </p>
         </div>
 
@@ -183,7 +197,7 @@ export default function GalleryPage() {
               onChange={(e) => setSemanticSearch(e.target.checked)}
               className="rounded border-zinc-400 text-blue-600 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-900"
             />
-            <span title="Uses OpenAI embeddings on descriptions; best with a phrase or concept, not exact keywords only.">
+            <span title="Ranks by similarity to your query; only confident matches are shown (tunable via SEMANTIC_SEARCH_* in backend .env).">
               Semantic search
             </span>
           </label>
@@ -282,6 +296,12 @@ export default function GalleryPage() {
 
         {items && items.length > 0 ? (
           <>
+            {keywordFallback && semanticSearch && debouncedQ.trim() ? (
+              <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50/80 px-3 py-2 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100/95">
+                No strong embedding matches for this query — showing text matches (description,
+                notes, tags) instead.
+              </p>
+            ) : null}
             <p className="mb-6 text-sm text-zinc-500">
               {items.length} result{items.length === 1 ? "" : "s"}
               {filtersActive ? " · filtered" : ""}
@@ -292,6 +312,18 @@ export default function GalleryPage() {
                   key={img.id}
                   className="group relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm ring-1 ring-black/[0.04] transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:ring-white/[0.06]"
                 >
+                  {typeof img.semantic_score === "number" &&
+                  img.semantic_score > 0 &&
+                  semanticSearch &&
+                  debouncedQ.trim() &&
+                  !keywordFallback ? (
+                    <span
+                      className="absolute left-3 top-3 z-10 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold tabular-nums text-blue-700 shadow-sm ring-1 ring-blue-200/80 dark:bg-zinc-900/90 dark:text-blue-300 dark:ring-blue-900/60"
+                      title="Cosine similarity between your query and the image description embedding"
+                    >
+                      Match {(img.semantic_score * 100).toFixed(0)}%
+                    </span>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => setEditingImage(img)}

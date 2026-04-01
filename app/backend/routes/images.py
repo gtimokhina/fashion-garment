@@ -27,12 +27,24 @@ class ImageOut(BaseModel):
     metadata: dict[str, Any] = Field(description="AI structured attributes")
     annotations: dict[str, Any]
     created_at: datetime
+    semantic_score: Optional[float] = Field(
+        default=None,
+        description="Cosine similarity to the search query when semantic search is used (omit otherwise).",
+    )
 
     model_config = {"from_attributes": False}
 
 
 class ImageListResponse(BaseModel):
     items: list[ImageOut]
+    semantic_mode: Optional[bool] = Field(
+        default=None,
+        description="True when the request used semantic=true with a non-empty query.",
+    )
+    keyword_fallback: Optional[bool] = Field(
+        default=None,
+        description="True when semantic search fell back to substring matching (no strong embedding matches).",
+    )
 
 
 class UploadErrorOut(BaseModel):
@@ -74,7 +86,12 @@ def _public_file_url(request: Request, file_path: str) -> str:
     return f"{base}/{file_path.lstrip('/')}"
 
 
-def _to_out(request: Request, row: Image) -> ImageOut:
+def _to_out(
+    request: Request,
+    row: Image,
+    *,
+    semantic_score: Optional[float] = None,
+) -> ImageOut:
     return ImageOut(
         id=row.id,
         file_path=row.file_path,
@@ -83,6 +100,7 @@ def _to_out(request: Request, row: Image) -> ImageOut:
         metadata=row.meta,
         annotations=row.annotations,
         created_at=row.created_at,
+        semantic_score=semantic_score,
     )
 
 
@@ -134,8 +152,9 @@ def list_images(
     List images. Metadata filters: case-insensitive substring on JSON fields.
     ``q`` / ``search`` matches **description**, annotation **notes**, and any **tag**
     (substring). ``color`` is shorthand for ``color_palette``.
-    With ``semantic=true`` and a non-empty ``q``/``search``, results are filtered by
-    facets only, then ordered by cosine similarity of text embeddings (descriptions).
+    With ``semantic=true`` and a non-empty ``q``/``search``, results use embedding
+    similarity on descriptions (see ``semantic_score`` on each item). Weak matches are
+    dropped; if none remain, substring search is used (``keyword_fallback`` on the response).
     """
     palette: Optional[str] = None
     if color_palette not in (None, ""):
@@ -150,7 +169,7 @@ def list_images(
         desc = search
 
     if semantic and desc and str(desc).strip():
-        rows = image_filters.query_images_semantic(
+        result = image_filters.query_images_semantic(
             session,
             garment_type=garment_type,
             style=style,
@@ -158,15 +177,24 @@ def list_images(
             color_palette=palette,
             search_query=desc,
         )
-    else:
-        rows = image_filters.query_images(
-            session,
-            garment_type=garment_type,
-            style=style,
-            occasion=occasion,
-            color_palette=palette,
-            description_query=desc,
+        items_out = [
+            _to_out(request, r, semantic_score=s)
+            for r, s in zip(result.items, result.scores)
+        ]
+        return ImageListResponse(
+            items=items_out,
+            semantic_mode=True,
+            keyword_fallback=result.used_keyword_fallback,
         )
+
+    rows = image_filters.query_images(
+        session,
+        garment_type=garment_type,
+        style=style,
+        occasion=occasion,
+        color_palette=palette,
+        description_query=desc,
+    )
     return ImageListResponse(items=[_to_out(request, r) for r in rows])
 
 

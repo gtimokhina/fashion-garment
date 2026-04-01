@@ -38,3 +38,21 @@ def database_path_from_url(url: str) -> Optional[Path]:
 
 def upload_dir_path() -> Path:
     return BACKEND_ROOT / "uploads"
+
+
+def semantic_search_min_score() -> float:
+    """Minimum cosine similarity (0–1) to keep a row in semantic search results."""
+    raw = os.getenv("SEMANTIC_SEARCH_MIN_SCORE", "0.28")
+    try:
+        return max(0.0, min(1.0, float(raw)))
+    except ValueError:
+        return 0.28
+
+
+def semantic_search_relative_to_best() -> float:
+    """Also require score >= this fraction of the best match (reduces long-tail junk)."""
+    raw = os.getenv("SEMANTIC_SEARCH_RELATIVE_TO_BEST", "0.88")
+    try:
+        return max(0.5, min(1.0, float(raw)))
+    except ValueError:
+        return 0.88
