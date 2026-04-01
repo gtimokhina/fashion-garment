@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from sqlalchemy import String, and_, cast, func, select
+from sqlalchemy import String, and_, cast, func, or_, select, text
 from sqlalchemy.orm import Session
 
 from models.image import Image
@@ -63,8 +63,24 @@ def query_images(
         clauses.append(c)
 
     if description_query and description_query.strip():
-        t = _escape_like(description_query.strip().lower())
-        clauses.append(func.lower(Image.description).like(f"%{t}%", escape="\\"))
+        raw_needle = description_query.strip().lower()
+        t = _escape_like(raw_needle)
+        pattern = f"%{t}%"
+        desc_clause = func.lower(Image.description).like(pattern, escape="\\")
+        notes_clause = func.lower(
+            cast(
+                func.coalesce(func.json_extract(Image.annotations, "$.notes"), ""),
+                String,
+            )
+        ).like(pattern, escape="\\")
+        # Tags: substring match without LIKE (avoids ESCAPE issues in raw SQL).
+        tags_clause = text(
+            "EXISTS (SELECT 1 FROM json_each("
+            "COALESCE(json_extract(image.annotations, '$.tags'), json_array())"
+            ") AS j WHERE typeof(j.value) = 'text' "
+            "AND instr(lower(j.value), :ann_sub) > 0)"
+        ).bindparams(ann_sub=raw_needle)
+        clauses.append(or_(desc_clause, notes_clause, tags_clause))
 
     if clauses:
         stmt = stmt.where(and_(*clauses))

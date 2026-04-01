@@ -14,6 +14,7 @@ from services.ai_classifier import classification_metadata, classify_image
 from services.config import BACKEND_ROOT
 from services import image_crud
 from services import image_filters
+from services.annotation_utils import merge_annotation_patch, normalize_annotations
 
 router = APIRouter(prefix="/images", tags=["images"])
 
@@ -49,6 +50,13 @@ class ImageUpdateBody(BaseModel):
     annotations: Optional[dict[str, Any]] = None
 
 
+class AnnotationsPatchBody(BaseModel):
+    """Designer annotations. Omitted fields are left unchanged."""
+
+    tags: Optional[list[str]] = None
+    notes: Optional[str] = None
+
+
 def _public_file_url(request: Request, file_path: str) -> str:
     base = str(request.base_url).rstrip("/")
     return f"{base}/{file_path.lstrip('/')}"
@@ -79,9 +87,9 @@ def list_images(
     search: Optional[str] = None,
 ):
     """
-    List images. Filters use case-insensitive substring match on metadata JSON
-    (except description uses ``q`` / ``search``). ``color`` is shorthand for
-    searching inside ``color_palette``.
+    List images. Metadata filters: case-insensitive substring on JSON fields.
+    ``q`` / ``search`` matches **description**, annotation **notes**, and any **tag**
+    (substring). ``color`` is shorthand for ``color_palette``.
     """
     palette: Optional[str] = None
     if color_palette not in (None, ""):
@@ -131,7 +139,7 @@ async def upload_image(
         file_path=rel_path,
         description=classification.description,
         metadata=meta,
-        annotations={},
+        annotations=normalize_annotations({}),
     )
     return _to_out(request, row)
 
@@ -145,6 +153,28 @@ def image_facets(session: Session = Depends(get_session)):
 @router.get("/{image_id}", response_model=ImageOut)
 def get_image(image_id: int, request: Request, session: Session = Depends(get_session)):
     row = image_crud.get_image(session, image_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+    return _to_out(request, row)
+
+
+@router.patch("/{image_id}/annotations", response_model=ImageOut)
+def patch_annotations(
+    image_id: int,
+    body: AnnotationsPatchBody,
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    if body.tags is None and body.notes is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Provide at least one of: tags, notes",
+        )
+    row = image_crud.get_image(session, image_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Image not found")
+    merged = merge_annotation_patch(row.annotations, tags=body.tags, notes=body.notes)
+    row = image_crud.update_image(session, image_id, annotations=merged)
     if row is None:
         raise HTTPException(status_code=404, detail="Image not found")
     return _to_out(request, row)

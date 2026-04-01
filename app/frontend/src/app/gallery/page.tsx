@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getApiBase } from "@/lib/api";
+import { getDesignerNotes, getDesignerTags } from "@/lib/annotations";
+import { AnnotationEditModal } from "@/components/AnnotationEditModal";
 import { Spinner } from "@/components/Spinner";
 
 type ImageItem = {
@@ -47,6 +49,7 @@ function buildImagesQuery(params: {
 }
 
 export default function GalleryPage() {
+  const [editingImage, setEditingImage] = useState<ImageItem | null>(null);
   const [items, setItems] = useState<ImageItem[] | null>(null);
   const [facets, setFacets] = useState<Facets | null>(null);
   const [imagesError, setImagesError] = useState<string | null>(null);
@@ -133,6 +136,10 @@ export default function GalleryPage() {
   const filtersActive =
     Boolean(garmentType || style || occasion || colorPalette || debouncedQ);
 
+  function onAnnotationSaved(row: ImageItem) {
+    setItems((prev) => (prev ? prev.map((x) => (x.id === row.id ? row : x)) : null));
+  }
+
   return (
     <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl flex-col gap-8 px-6 py-10 lg:flex-row">
       <aside className="w-full shrink-0 space-y-6 lg:sticky lg:top-6 lg:w-72 lg:self-start">
@@ -141,13 +148,13 @@ export default function GalleryPage() {
             Gallery
           </h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Filter by AI metadata or search descriptions.
+            Filter by AI metadata. Search covers description, your notes, and tags.
           </p>
         </div>
 
         <div className="space-y-2">
           <label htmlFor="search" className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-            Search description
+            Search
           </label>
           <input
             id="search"
@@ -212,6 +219,13 @@ export default function GalleryPage() {
       </aside>
 
       <section className="min-w-0 flex-1">
+        <AnnotationEditModal
+          image={editingImage}
+          open={editingImage !== null}
+          onClose={() => setEditingImage(null)}
+          onSaved={(data) => onAnnotationSaved(data as ImageItem)}
+        />
+
         {imagesError ? (
           <p className="text-sm text-red-600 dark:text-red-400">{imagesError}</p>
         ) : null}
@@ -253,8 +267,15 @@ export default function GalleryPage() {
               {items.map((img) => (
                 <li
                   key={img.id}
-                  className="group overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm ring-1 ring-black/[0.04] transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:ring-white/[0.06]"
+                  className="group relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm ring-1 ring-black/[0.04] transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950 dark:ring-white/[0.06]"
                 >
+                  <button
+                    type="button"
+                    onClick={() => setEditingImage(img)}
+                    className="absolute right-3 top-3 z-10 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-200 backdrop-blur hover:bg-white dark:bg-zinc-900/90 dark:text-zinc-100 dark:ring-zinc-700"
+                  >
+                    Edit
+                  </button>
                   <div className="aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -264,10 +285,16 @@ export default function GalleryPage() {
                       loading="lazy"
                     />
                   </div>
-                  <div className="border-t border-zinc-100 p-4 dark:border-zinc-800">
-                    <p className="line-clamp-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-                      {shortDescription(img.description)}
-                    </p>
+                  <div className="space-y-3 border-t border-zinc-100 p-4 dark:border-zinc-800">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">
+                        AI description
+                      </p>
+                      <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+                        {shortDescription(img.description)}
+                      </p>
+                    </div>
+                    <DesignerAnnotationsBlock annotations={img.annotations} />
                   </div>
                 </li>
               ))}
@@ -275,6 +302,42 @@ export default function GalleryPage() {
           </>
         ) : null}
       </section>
+    </div>
+  );
+}
+
+function DesignerAnnotationsBlock({ annotations }: { annotations: Record<string, unknown> }) {
+  const tags = getDesignerTags(annotations);
+  const notes = getDesignerNotes(annotations);
+  const has = tags.length > 0 || notes.trim().length > 0;
+  return (
+    <div
+      className={`rounded-xl border p-3 ${has ? "border-amber-200/90 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/25" : "border-dashed border-zinc-200 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-900/40"}`}
+    >
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200/90">
+        Your annotations
+      </p>
+      {!has ? (
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">None yet — use Edit to add tags or notes.</p>
+      ) : (
+        <>
+          {tags.length > 0 ? (
+            <ul className="mt-2 flex flex-wrap gap-1.5">
+              {tags.map((t, i) => (
+                <li
+                  key={`${i}-${t}`}
+                  className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-950 dark:bg-amber-900/55 dark:text-amber-50"
+                >
+                  {t}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {notes.trim() ? (
+            <p className="mt-2 text-xs leading-relaxed text-amber-950 dark:text-amber-100/95">{notes}</p>
+          ) : null}
+        </>
+      )}
     </div>
   );
 }
