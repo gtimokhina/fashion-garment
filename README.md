@@ -6,7 +6,7 @@ Lightweight AI-powered web app for fashion designers to organize, search, and re
 
 Design teams collect large numbers of inspiration photos; this project explores turning that library into a searchable, annotated resource with AI-assisted garment classification and designer-added metadata.
 
-**Designer annotations** (tags and free-text notes) are stored separately from **AI-generated** descriptions and structured metadata. Search matches both, but the gallery labels them distinctly (amber “Your annotations” vs violet “Description”) so you can tell what came from the model versus human input.
+**Designer annotations** (tags and free-text notes) are stored separately from **AI-generated** descriptions and structured metadata. Search matches both, but the gallery labels them distinctly (amber “Your annotations” vs blue “Description”) so you can tell what came from the model versus human input.
 
 ## Stack
 

@@ -161,7 +161,7 @@ export default function GalleryPage() {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="e.g. denim, studio…"
-            className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
+            className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
           />
         </div>
 
@@ -243,12 +243,12 @@ export default function GalleryPage() {
               <button
                 type="button"
                 onClick={clearFilters}
-                className="font-medium text-violet-600 hover:underline dark:text-violet-400"
+                className="font-medium text-blue-600 hover:underline dark:text-blue-400"
               >
                 Reset filters
               </button>{" "}
               or{" "}
-              <Link href="/upload" className="font-medium text-violet-600 hover:underline dark:text-violet-400">
+              <Link href="/upload" className="font-medium text-blue-600 hover:underline dark:text-blue-400">
                 upload
               </Link>
               .
@@ -308,14 +308,14 @@ function DescriptionBlock({ description }: { description: string }) {
   return (
     <div>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
           Description
         </p>
         {collapsible ? (
           <button
             type="button"
             onClick={() => setExpanded((e) => !e)}
-            className="-mr-1 -mt-0.5 shrink-0 rounded-md p-1 text-violet-600 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-950/40"
+            className="-mr-1 -mt-0.5 shrink-0 rounded-md p-1 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40"
             aria-expanded={expanded}
             aria-label={expanded ? "Collapse description" : "Expand description"}
           >
@@ -404,7 +404,7 @@ function FilterSelect({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-2 text-sm text-zinc-900 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
+        className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
       >
         <option value="">Any</option>
         {options.map((opt) => (

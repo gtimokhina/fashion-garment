@@ -140,7 +140,7 @@ export default function UploadPage() {
             "relative rounded-2xl border-2 border-dashed px-6 py-14 text-center transition-colors",
             status === "uploading" && "pointer-events-none opacity-80",
             dragOver
-              ? "border-violet-500 bg-violet-50/60 dark:border-violet-400 dark:bg-violet-950/30"
+              ? "border-blue-500 bg-blue-50/60 dark:border-blue-400 dark:bg-blue-950/30"
               : "border-zinc-300 bg-zinc-50/80 dark:border-zinc-600 dark:bg-zinc-900/40",
           ].join(" ")}
         >
@@ -204,7 +204,7 @@ export default function UploadPage() {
         <p className="mt-6 text-center text-sm">
           <Link
             href="/gallery"
-            className="font-medium text-violet-600 underline decoration-violet-300 underline-offset-4 hover:text-violet-700 dark:text-violet-400 dark:decoration-violet-700 dark:hover:text-violet-300"
+            className="font-medium text-blue-600 underline decoration-blue-300 underline-offset-4 hover:text-blue-700 dark:text-blue-400 dark:decoration-blue-700 dark:hover:text-blue-300"
           >
             Open gallery
           </Link>
