@@ -12,6 +12,7 @@ Requires the API up (e.g. uvicorn) and OPENAI_* set for classification.
 from __future__ import annotations
 
 import argparse
+import errno
 import json
 import mimetypes
 import os
@@ -31,6 +32,32 @@ _CLIENT_UA = (
 
 _DEFAULT_TAGS = ["pexels", "eval", "stock"]
 _DEFAULT_NOTES = "Imported from Pexels (bulk download + ingest script)."
+
+_BACKEND_HINT = """\
+Connection refused — no HTTP server at {url}.
+
+Start the API first (from app/backend with your venv activated), then retry:
+
+  cd app/backend && uvicorn main:app --reload --host 127.0.0.1 --port 8000
+
+If the API runs elsewhere, set --base-url or BACKEND_URL (e.g. http://127.0.0.1:8000).
+"""
+
+
+def _is_connection_refused(exc: BaseException) -> bool:
+    if isinstance(exc, urllib.error.URLError) and exc.reason is not None:
+        r = exc.reason
+        if isinstance(r, OSError):
+            return r.errno == errno.ECONNREFUSED
+    return False
+
+
+def ping_health(base_url: str, timeout: int = 5) -> None:
+    """GET /health — fails fast if the backend is not running."""
+    url = f"{base_url.rstrip('/')}/health"
+    req = urllib.request.Request(url, method="GET", headers={"User-Agent": _CLIENT_UA})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        resp.read()
 
 
 def _multipart_body(
@@ -165,6 +192,19 @@ def main() -> int:
         print(f"No pexels_* images found under {root}")
         return 0
 
+    if not args.dry_run:
+        try:
+            ping_health(args.base_url)
+        except urllib.error.URLError as e:
+            if _is_connection_refused(e):
+                print(_BACKEND_HINT.format(url=args.base_url.rstrip("/")), file=sys.stderr)
+                return 1
+            print(f"Cannot reach API at {args.base_url!r}: {e}", file=sys.stderr)
+            return 1
+        except OSError as e:
+            print(f"Cannot reach API at {args.base_url!r}: {e}", file=sys.stderr)
+            return 1
+
     print(f"Found {len(files)} file(s) under {root}")
     if args.dry_run:
         for p in files:
@@ -186,6 +226,9 @@ def main() -> int:
             continue
         except urllib.error.URLError as e:
             print(f"  Network error: {e}", file=sys.stderr)
+            if _is_connection_refused(e):
+                print(_BACKEND_HINT.format(url=args.base_url.rstrip("/")), file=sys.stderr)
+                return 1
             failed += 1
             continue
 
@@ -223,6 +266,9 @@ def main() -> int:
             continue
         except urllib.error.URLError as e:
             print(f"  Annotations network error: {e}", file=sys.stderr)
+            if _is_connection_refused(e):
+                print(_BACKEND_HINT.format(url=args.base_url.rstrip("/")), file=sys.stderr)
+                return 1
             failed += 1
             continue
 
