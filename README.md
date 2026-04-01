@@ -82,15 +82,15 @@ See `eval/` for scripts, labeled data, and instructions. A short summary of per-
 **Bulk fashion images (Pexels):** use the official API (not the search webpage). Get a free key at [pexels.com/api](https://www.pexels.com/api/), add `PEXELS_API_KEY=...` to `app/backend/.env` (same file as the backend), then:
 
 ```bash
-python eval/scripts/download_pexels_fashion.py   # 50 × "fashion" → eval/data/pexels_fashion/
+python3 eval/scripts/download_pexels_fashion.py   # 50 × "fashion" → eval/data/pexels_fashion/
 ```
 
-You can also `export PEXELS_API_KEY=...` to override. Options: `--count 50`, `--query fashion`, `--out path`.
+On macOS, `python` is often missing — use `python3` (or activate a venv that provides `python`). You can also `export PEXELS_API_KEY=...` to override. Options: `--count 50`, `--query fashion`, `--out path`.
 
 **Ingest downloads into the app** (same pipeline as the Upload page: save → classify → DB). In a separate terminal, start the backend (`uvicorn` with `OPENAI_*` set — see Backend above), then:
 
 ```bash
-python eval/scripts/ingest_pexels_to_backend.py
+python3 eval/scripts/ingest_pexels_to_backend.py
 ```
 
 If you see “connection refused”, the API is not running on the default URL yet.

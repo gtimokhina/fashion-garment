@@ -5,8 +5,8 @@ save → classify → DB row. Then PATCH annotations with tags + notes.
 
 Requires the API up (e.g. uvicorn) and OPENAI_* set for classification.
 
-  python eval/scripts/ingest_pexels_to_backend.py
-  python eval/scripts/ingest_pexels_to_backend.py --base-url http://127.0.0.1:8000 --dry-run
+  python3 eval/scripts/ingest_pexels_to_backend.py
+  python3 eval/scripts/ingest_pexels_to_backend.py --base-url http://127.0.0.1:8000 --dry-run
 """
 
 from __future__ import annotations

@@ -6,7 +6,7 @@ The website https://www.pexels.com/search/fashion/ is not meant for bulk scrapin
 use the free API instead: https://www.pexels.com/api/
 
   # Key is read from app/backend/.env (PEXELS_API_KEY) if set there, else from the environment.
-  python eval/scripts/download_pexels_fashion.py
+  python3 eval/scripts/download_pexels_fashion.py
 
 Optional: --count 50 --query fashion --out eval/data/pexels_fashion
 """
