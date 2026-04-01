@@ -7,6 +7,10 @@ import { Spinner } from "@/components/Spinner";
 
 const ACCEPT = "image/jpeg,image/png,image/gif,image/webp";
 
+function isImageFile(file: File): boolean {
+  return /^image\/(jpeg|png|gif|webp)$/i.test(file.type);
+}
+
 function parseErrorDetail(data: unknown): string {
   if (data && typeof data === "object" && "detail" in data) {
     const d = (data as { detail: unknown }).detail;
@@ -16,36 +20,74 @@ function parseErrorDetail(data: unknown): string {
   return "Request failed";
 }
 
+type BatchResponse = {
+  items: unknown[];
+  errors: { filename: string; detail: string }[];
+};
+
 export default function UploadPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [status, setStatus] = useState<"idle" | "uploading" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [batchCount, setBatchCount] = useState(0);
 
-  const uploadFile = useCallback(async (file: File) => {
-    if (!file.type.match(/^image\/(jpeg|png|gif|webp)$/i)) {
+  const uploadFiles = useCallback(async (fileList: File[]) => {
+    const files = fileList.filter(isImageFile);
+    if (files.length === 0) {
       setStatus("error");
-      setMessage("Use JPEG, PNG, GIF, or WebP.");
+      setMessage("Add at least one JPEG, PNG, GIF, or WebP image.");
       return;
     }
 
     setStatus("uploading");
-    setMessage("Analyzing with AI…");
+    setBatchCount(files.length);
+    setMessage(
+      files.length === 1
+        ? "Uploading & classifying…"
+        : `Uploading & classifying ${files.length} images…`,
+    );
 
     const body = new FormData();
-    body.append("file", file);
+    for (const f of files) {
+      body.append("files", f);
+    }
 
     try {
       const res = await fetch(`${getApiBase()}/api/images/upload`, {
         method: "POST",
         body,
       });
-      const data = await res.json().catch(() => ({}));
+      const data = (await res.json().catch(() => ({}))) as BatchResponse | Record<string, unknown>;
       if (!res.ok) {
         throw new Error(parseErrorDetail(data) || res.statusText);
       }
+      const items = Array.isArray((data as BatchResponse).items)
+        ? (data as BatchResponse).items
+        : [];
+      const errors = Array.isArray((data as BatchResponse).errors)
+        ? (data as BatchResponse).errors
+        : [];
+
+      if (items.length === 0) {
+        setStatus("error");
+        const errLines = errors.map((e) => `${e.filename}: ${e.detail}`).join("; ");
+        setMessage(errLines || "No images were saved.");
+        return;
+      }
+
       setStatus("done");
-      setMessage("Saved to the library.");
+      if (errors.length === 0) {
+        setMessage(
+          items.length === 1
+            ? "Saved 1 image to the library."
+            : `Saved ${items.length} images to the library.`,
+        );
+      } else {
+        setMessage(
+          `Saved ${items.length} image(s). ${errors.length} failed: ${errors.map((e) => e.filename).join(", ")}.`,
+        );
+      }
       if (inputRef.current) inputRef.current.value = "";
     } catch (err) {
       setStatus("error");
@@ -53,24 +95,23 @@ export default function UploadPage() {
     }
   }, []);
 
-
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const file = inputRef.current?.files?.[0];
-    if (!file) {
+    const list = inputRef.current?.files;
+    if (!list?.length) {
       setStatus("error");
-      setMessage("Choose or drop a file first.");
+      setMessage("Choose or drop one or more images first.");
       return;
     }
-    void uploadFile(file);
+    void uploadFiles(Array.from(list));
   }
 
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
     if (status === "uploading") return;
-    const file = e.dataTransfer.files?.[0];
-    if (file) void uploadFile(file);
+    const dropped = Array.from(e.dataTransfer.files || []).filter(isImageFile);
+    if (dropped.length) void uploadFiles(dropped);
   }
 
   return (
@@ -79,7 +120,8 @@ export default function UploadPage() {
         Upload
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-        Drop an inspiration image here or browse. We classify it and add it to your gallery.
+        Drop multiple inspiration images or browse. Each file is classified and added to your
+        gallery.
       </p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
@@ -106,13 +148,15 @@ export default function UploadPage() {
             <div className="flex flex-col items-center gap-4">
               <Spinner className="h-10 w-10 border-[3px]" />
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Uploading &amp; classifying…
+                {batchCount > 1
+                  ? `Processing ${batchCount} images (this may take a while)…`
+                  : "Uploading & classifying…"}
               </p>
             </div>
           ) : (
             <>
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Drag and drop an image
+                Drag and drop images here
               </p>
               <p className="mt-1 text-xs text-zinc-500">or</p>
               <button
@@ -120,20 +164,21 @@ export default function UploadPage() {
                 onClick={() => inputRef.current?.click()}
                 className="mt-4 rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
               >
-                Choose file
+                Choose files
               </button>
             </>
           )}
           <input
             ref={inputRef}
-            name="file"
+            name="files"
             type="file"
             accept={ACCEPT}
+            multiple
             className="hidden"
             disabled={status === "uploading"}
             onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) void uploadFile(f);
+              const list = e.target.files;
+              if (list?.length) void uploadFiles(Array.from(list));
             }}
           />
         </div>
@@ -143,7 +188,7 @@ export default function UploadPage() {
           disabled={status === "uploading"}
           className="w-full rounded-xl border border-zinc-300 bg-white py-3 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-900"
         >
-          Upload selected file
+          Upload selected files
         </button>
       </form>
 

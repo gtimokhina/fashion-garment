@@ -35,6 +35,18 @@ class ImageListResponse(BaseModel):
     items: list[ImageOut]
 
 
+class UploadErrorOut(BaseModel):
+    filename: str
+    detail: str
+
+
+class ImageBatchUploadResponse(BaseModel):
+    """Result of uploading one or more images (each classified and saved independently)."""
+
+    items: list[ImageOut]
+    errors: list[UploadErrorOut]
+
+
 class ImageFacetsOut(BaseModel):
     """Distinct metadata values in the library (for dynamic filter controls)."""
 
@@ -72,6 +84,34 @@ def _to_out(request: Request, row: Image) -> ImageOut:
         annotations=row.annotations,
         created_at=row.created_at,
     )
+
+
+async def _ingest_one_upload(
+    request: Request,
+    session: Session,
+    file: UploadFile,
+) -> tuple[ImageOut | None, str | None]:
+    """Save, classify, persist one upload. Returns (result, error_detail)."""
+    label = file.filename or "unnamed"
+    try:
+        rel_path, abs_path = await image_service.save_upload_to_disk(file)
+    except ValueError as e:
+        return None, str(e)
+    try:
+        classification = classify_image(abs_path)
+    except Exception as e:
+        abs_path.unlink(missing_ok=True)
+        return None, f"Image classification failed: {e}"
+
+    meta = classification_metadata(classification)
+    row = image_crud.create_image(
+        session,
+        file_path=rel_path,
+        description=classification.description,
+        metadata=meta,
+        annotations=normalize_annotations({}),
+    )
+    return _to_out(request, row), None
 
 
 @router.get("", response_model=ImageListResponse)
@@ -113,35 +153,28 @@ def list_images(
     return ImageListResponse(items=[_to_out(request, r) for r in rows])
 
 
-@router.post("/upload", response_model=ImageOut)
-async def upload_image(
+@router.post("/upload", response_model=ImageBatchUploadResponse)
+async def upload_images(
     request: Request,
     session: Session = Depends(get_session),
-    file: UploadFile = File(...),
+    files: list[UploadFile] = File(..., description="One or more images (same field name: files)"),
 ):
-    try:
-        rel_path, abs_path = await image_service.save_upload_to_disk(file)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
+    if not files:
+        raise HTTPException(status_code=400, detail="Send at least one file under form field 'files'")
 
-    try:
-        classification = classify_image(abs_path)
-    except Exception as e:
-        abs_path.unlink(missing_ok=True)
-        raise HTTPException(
-            status_code=502,
-            detail=f"Image classification failed: {e}",
-        ) from e
+    items: list[ImageOut] = []
+    errors: list[UploadErrorOut] = []
 
-    meta = classification_metadata(classification)
-    row = image_crud.create_image(
-        session,
-        file_path=rel_path,
-        description=classification.description,
-        metadata=meta,
-        annotations=normalize_annotations({}),
-    )
-    return _to_out(request, row)
+    for f in files:
+        out, err = await _ingest_one_upload(request, session, f)
+        if out is not None:
+            items.append(out)
+        else:
+            errors.append(
+                UploadErrorOut(filename=f.filename or "unnamed", detail=err or "Unknown error")
+            )
+
+    return ImageBatchUploadResponse(items=items, errors=errors)
 
 
 @router.get("/facets", response_model=ImageFacetsOut)

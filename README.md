@@ -34,7 +34,7 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8000
 API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)  
 Health check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
 
-**Images:** `GET /api/images` with optional filters (substring, case-insensitive): `garment_type`, `style`, `occasion`, `color_palette`, `color` (alias for palette text), `q` or `search` (matches **description**, annotation **notes**, and **tags**). **Facets:** `GET /api/images/facets`. **Annotations:** `PATCH /api/images/{id}/annotations` with JSON `{ "tags": ["a"], "notes": "..." }` (omit a field to leave it unchanged).
+**Images:** `GET /api/images` with optional filters (substring, case-insensitive): `garment_type`, `style`, `occasion`, `color_palette`, `color` (alias for palette text), `q` or `search` (matches **description**, annotation **notes**, and **tags**). **Facets:** `GET /api/images/facets`. **Upload:** `POST /api/images/upload` with multipart field **`files`** repeated (one or more images); response `{ "items": [...], "errors": [{ "filename", "detail" }] }` (per-file classification; partial success possible). **Annotations:** `PATCH /api/images/{id}/annotations` with JSON `{ "tags": ["a"], "notes": "..." }` (omit a field to leave it unchanged).
 
 Optional: copy [`app/backend/.env.example`](app/backend/.env.example) to `app/backend/.env` and set `DATABASE_URL` or comma-separated `CORS_ORIGINS`.
 
