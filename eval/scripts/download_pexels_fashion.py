@@ -29,6 +29,13 @@ DEFAULT_OUT = REPO_ROOT / "eval" / "data" / "pexels_fashion"
 API_SEARCH = "https://api.pexels.com/v1/search"
 BACKEND_ENV = REPO_ROOT / "app" / "backend" / ".env"
 
+# Pexels sits behind Cloudflare. The default urllib User-Agent (Python-urllib/…) is often
+# blocked with HTTP 403 and body "error code: 1010". Use a normal browser-like UA.
+_CLIENT_UA = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+)
+
 
 def load_backend_dotenv() -> None:
     """Load KEY=value pairs from app/backend/.env into os.environ if not already set."""
@@ -64,7 +71,11 @@ def fetch_page(query: str, per_page: int, page: int, api_key: str) -> dict:
     url = f"{API_SEARCH}?{q}"
     req = urllib.request.Request(
         url,
-        headers={"Authorization": api_key},
+        headers={
+            "Authorization": api_key,
+            "Accept": "application/json",
+            "User-Agent": _CLIENT_UA,
+        },
         method="GET",
     )
     with urllib.request.urlopen(req, timeout=60) as resp:
@@ -82,7 +93,11 @@ def pick_image_url(photo: dict) -> str | None:
 
 
 def download_file(url: str, dest: Path) -> None:
-    req = urllib.request.Request(url, method="GET")
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": _CLIENT_UA},
+        method="GET",
+    )
     with urllib.request.urlopen(req, timeout=120) as resp:
         dest.write_bytes(resp.read())
 
@@ -131,6 +146,13 @@ def main() -> int:
         except urllib.error.HTTPError as e:
             body = e.read().decode(errors="replace") if e.fp else ""
             print(f"Pexels API HTTP {e.code}: {body[:500]}", file=sys.stderr)
+            if e.code == 403 and "1010" in body:
+                print(
+                    "Hint: Cloudflare often blocks the default Python user-agent; this script "
+                    "sets a browser User-Agent. If this persists, try another network/VPN or "
+                    "confirm your API key at https://www.pexels.com/api/",
+                    file=sys.stderr,
+                )
             return 1
         except urllib.error.URLError as e:
             print(f"Network error: {e}", file=sys.stderr)
