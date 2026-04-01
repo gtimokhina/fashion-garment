@@ -1,18 +1,38 @@
-from datetime import datetime, timezone
-from typing import Optional
+from __future__ import annotations
 
-from sqlmodel import Field, SQLModel
+from datetime import datetime, timezone
+from typing import Any
+
+from sqlalchemy import DateTime, Integer, JSON, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
+
+from models.database import Base
 
 
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-class ImageRecord(SQLModel, table=True):
-    """Stored garment inspiration image metadata."""
+class Image(Base):
+    __tablename__ = "image"
 
-    __tablename__ = "image_record"
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    filename: str = Field(index=True)
-    created_at: datetime = Field(default_factory=_utc_now)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    file_path: Mapped[str] = mapped_column(String(512), nullable=False, index=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # Column name "metadata" in DB; avoid SQLAlchemy reserved `metadata` attribute clash.
+    meta: Mapped[dict[str, Any]] = mapped_column(
+        "metadata",
+        JSON,
+        nullable=False,
+        default=lambda: {},
+    )
+    annotations: Mapped[dict[str, Any]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=lambda: {},
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=_utc_now,
+    )

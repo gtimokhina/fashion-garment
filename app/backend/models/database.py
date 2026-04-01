@@ -1,9 +1,14 @@
 from collections.abc import Generator
 
-from sqlmodel import Session, SQLModel, create_engine
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from models.image import ImageRecord  # noqa: F401 — register with metadata
 from services.config import database_path_from_url, get_database_url, sqlite_connect_args
+
+
+class Base(DeclarativeBase):
+    """SQLAlchemy model base."""
+
 
 _database_url = get_database_url()
 _db_path = database_path_from_url(_database_url)
@@ -15,11 +20,19 @@ engine = create_engine(
     connect_args=sqlite_connect_args(_database_url),
 )
 
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 def init_db() -> None:
-    SQLModel.metadata.create_all(engine)
+    # Import models so metadata is registered before create_all.
+    from models.image import Image  # noqa: F401
+
+    Base.metadata.create_all(bind=engine)
 
 
 def get_session() -> Generator[Session, None, None]:
-    with Session(engine) as session:
-        yield session
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

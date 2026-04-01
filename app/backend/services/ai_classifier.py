@@ -81,6 +81,11 @@ class ImageClassification(BaseModel):
     location_context: str = ""
 
 
+def classification_metadata(obj: ImageClassification) -> dict[str, str]:
+    """Structured attribute dict for persistence (excludes ``description``)."""
+    return {key: getattr(obj, key) for key in _STRUCTURE_KEYS}
+
+
 def _get_client() -> OpenAI:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key or not api_key.strip():

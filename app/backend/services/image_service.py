@@ -4,20 +4,25 @@ import uuid
 from pathlib import Path
 
 from fastapi import UploadFile
-from sqlmodel import Session, select
 
-from models.image import ImageRecord
 from services.config import upload_dir_path
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 
-
-def list_images(session: Session) -> list[ImageRecord]:
-    stmt = select(ImageRecord).order_by(ImageRecord.created_at.desc())
-    return list(session.exec(stmt).all())
+# Relative path prefix under BACKEND_ROOT (matches StaticFiles mount).
+UPLOAD_SUBDIR = "uploads"
 
 
-async def save_upload(session: Session, file: UploadFile) -> ImageRecord:
+def ensure_upload_dir() -> Path:
+    p = upload_dir_path()
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+async def save_upload_to_disk(file: UploadFile) -> tuple[str, Path]:
+    """
+    Save upload under uploads/. Returns (file_path relative to BACKEND_ROOT, absolute path).
+    """
     if not file.filename:
         raise ValueError("Missing filename")
 
@@ -25,14 +30,11 @@ async def save_upload(session: Session, file: UploadFile) -> ImageRecord:
     if suffix not in ALLOWED_EXTENSIONS:
         raise ValueError("Unsupported file type")
 
+    ensure_upload_dir()
     stored_name = f"{uuid.uuid4().hex}{suffix}"
-    dest = upload_dir_path() / stored_name
-
+    abs_path = upload_dir_path() / stored_name
     content = await file.read()
-    dest.write_bytes(content)
+    abs_path.write_bytes(content)
 
-    record = ImageRecord(filename=stored_name)
-    session.add(record)
-    session.commit()
-    session.refresh(record)
-    return record
+    rel = f"{UPLOAD_SUBDIR}/{stored_name}"
+    return rel, abs_path.resolve()

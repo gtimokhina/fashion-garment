@@ -4,7 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getApiBase } from "@/lib/api";
 
-type ImageItem = { id: number; filename: string; url: string };
+type ImageItem = {
+  id: number;
+  file_path: string;
+  url: string;
+  description: string;
+  metadata: Record<string, string>;
+  annotations: Record<string, unknown>;
+  created_at: string;
+};
 
 export default function GalleryPage() {
   const [items, setItems] = useState<ImageItem[] | null>(null);
@@ -37,7 +45,8 @@ export default function GalleryPage() {
             Gallery
           </h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Images returned from <code className="text-xs">GET /api/images</code>.
+            Full records from <code className="text-xs">GET /api/images</code> (AI metadata +
+            annotations).
           </p>
         </div>
         <Link
@@ -67,7 +76,7 @@ export default function GalleryPage() {
       ) : null}
 
       {items && items.length > 0 ? (
-        <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+        <ul className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((img) => (
             <li
               key={img.id}
@@ -76,10 +85,19 @@ export default function GalleryPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={img.url}
-                alt={img.filename}
+                alt={img.description.slice(0, 80) || img.file_path}
                 className="aspect-square w-full object-cover"
                 loading="lazy"
               />
+              <div className="space-y-1 border-t border-zinc-100 p-3 text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                <p className="line-clamp-3 text-sm text-zinc-800 dark:text-zinc-200">
+                  {img.description || "—"}
+                </p>
+                <p className="font-mono text-[10px] text-zinc-500">
+                  {img.metadata.garment_type}
+                  {img.metadata.style ? ` · ${img.metadata.style}` : ""}
+                </p>
+              </div>
             </li>
           ))}
         </ul>

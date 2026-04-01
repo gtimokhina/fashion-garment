@@ -8,7 +8,7 @@ package-mode = false
 python = ">=3.9,<4.0"
 fastapi = ">=0.115.0"
 uvicorn = { version = ">=0.32.0", extras = ["standard"] }
-sqlmodel = ">=0.0.22"
+sqlalchemy = ">=2.0.0"
 python-multipart = ">=0.0.9"
 openai = ">=1.55.0"
 python-dotenv = ">=1.0.0"

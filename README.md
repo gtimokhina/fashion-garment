@@ -11,7 +11,7 @@ Design teams collect large numbers of inspiration photos; this project explores 
 | Layer | Technology |
 |--------|------------|
 | Frontend | Next.js (App Router, TypeScript, Tailwind) in [`app/frontend`](app/frontend) |
-| Backend | FastAPI + SQLModel + SQLite in [`app/backend`](app/backend) (`main.py`, `routes/`, `services/`, `models/`) |
+| Backend | FastAPI + SQLAlchemy + SQLite in [`app/backend`](app/backend) (`main.py`, `routes/`, `services/`, `models/`) |
 | Database | SQLite file under `app/backend/data/` (created on first run) |
 
 ## Prerequisites
@@ -71,7 +71,7 @@ Dependencies: install with **`pip install -r requirements.txt`** or, if you use 
 
 ## Architecture
 
-The browser talks only to **Next.js** for pages and static assets. Client-side `fetch` uses `NEXT_PUBLIC_API_URL` to reach **FastAPI** (JSON, uploads, and future search endpoints). **SQLite** is opened exclusively from the Python process; the database file is not shared with Node.
+The browser talks only to **Next.js** for pages and static assets. Client-side `fetch` uses `NEXT_PUBLIC_API_URL` to reach **FastAPI** (JSON, uploads, and future search endpoints). **SQLite** is opened exclusively from the Python process via **SQLAlchemy** (`models/database.py`, `Image` ORM). Upload runs **GPT-4o** classification and persists `description`, `metadata` (structured attributes), and `annotations` (JSON, initially `{}`).
 
 ## Evaluation
 

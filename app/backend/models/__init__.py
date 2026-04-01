@@ -1,3 +1,4 @@
-from models.image import ImageRecord
+from models.database import Base, engine, get_session, init_db
+from models.image import Image
 
-__all__ = ["ImageRecord"]
+__all__ = ["Base", "Image", "engine", "get_session", "init_db"]
