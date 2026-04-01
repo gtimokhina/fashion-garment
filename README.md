@@ -6,6 +6,8 @@ Lightweight AI-powered web app for fashion designers to organize, search, and re
 
 Design teams collect large numbers of inspiration photos; this project explores turning that library into a searchable, annotated resource with AI-assisted garment classification and designer-added metadata.
 
+**Designer annotations** (tags and free-text notes) are stored separately from **AI-generated** descriptions and structured metadata. Search matches both, but the gallery labels them distinctly (amber “Your annotations” vs violet “AI description”) so you can tell what came from the model versus human input.
+
 ## Stack
 
 | Layer | Technology |
@@ -95,7 +97,13 @@ python3 eval/scripts/ingest_pexels_to_backend.py
 
 If you see “connection refused”, the API is not running on the default URL yet.
 
-This POSTs each `pexels_*` file to `/api/images/upload`, then sets **tags** (`pexels`, `eval`, `stock`, plus any `--tags a,b`) and **notes** (default: provenance line; override with `--notes "..."`). Use `--dry-run` to list files only. `BACKEND_URL` or `--base-url` if the API is not on `http://127.0.0.1:8000`.
+This POSTs each `pexels_*` file to `/api/images/upload` (AI classification only). Add **`--tags "a,b"`** and/or **`--notes "..."`** only if you want designer metadata on those rows; omit both to avoid placeholder annotations. Use `--dry-run` to list files only. `BACKEND_URL` or `--base-url` if the API is not on `http://127.0.0.1:8000`.
+
+**Clear all designer annotations in SQLite** (does not touch AI description/metadata):
+
+```bash
+cd app/backend && python3 scripts/clear_all_annotations.py
+```
 
 ## Testing
 

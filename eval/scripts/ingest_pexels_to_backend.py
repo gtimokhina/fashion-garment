@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
 POST Pexels downloads (eval/data/pexels_fashion) to the running backend, same as UI upload:
-save → classify → DB row. Then PATCH annotations with tags + notes.
+save → classify → DB row. Optional: PATCH designer tags/notes if you pass --tags and/or --notes.
 
 Requires the API up (e.g. uvicorn) and OPENAI_* set for classification.
 
   python3 eval/scripts/ingest_pexels_to_backend.py
+  python3 eval/scripts/ingest_pexels_to_backend.py --tags "moodboard" --notes "Winter drop refs"
   python3 eval/scripts/ingest_pexels_to_backend.py --base-url http://127.0.0.1:8000 --dry-run
 """
 
@@ -29,9 +30,6 @@ _CLIENT_UA = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 )
-
-_DEFAULT_TAGS = ["pexels", "eval", "stock"]
-_DEFAULT_NOTES = "Imported from Pexels (bulk download + ingest script)."
 
 _BACKEND_HINT = """\
 Connection refused — no HTTP server at {url}.
@@ -107,12 +105,11 @@ def post_upload(base_url: str, path: Path, timeout: int) -> dict:
 def patch_annotations(
     base_url: str,
     image_id: int,
-    tags: list[str],
-    notes: str,
+    body: dict,
     timeout: int,
 ) -> dict:
     url = f"{base_url.rstrip('/')}/api/images/{image_id}/annotations"
-    payload = json.dumps({"tags": tags, "notes": notes}).encode()
+    payload = json.dumps(body).encode()
     req = urllib.request.Request(
         url,
         data=payload,
@@ -137,7 +134,8 @@ def list_pexels_files(directory: Path) -> list[Path]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Upload Pexels eval images to the Fashion Garment API and set annotations.",
+        description="Upload Pexels eval images to the Fashion Garment API. "
+        "Designer annotations are optional (--tags / --notes); omit both to leave AI output only.",
     )
     parser.add_argument(
         "--dir",
@@ -152,13 +150,15 @@ def main() -> int:
     )
     parser.add_argument(
         "--tags",
-        default="",
-        help=f"Extra comma-separated tags (always added: {', '.join(_DEFAULT_TAGS)})",
+        default=None,
+        metavar="LIST",
+        help="Optional: comma-separated designer tags after each upload (omit for no PATCH)",
     )
     parser.add_argument(
         "--notes",
-        default=_DEFAULT_NOTES,
-        help="Annotation notes for every ingested image",
+        default=None,
+        metavar="TEXT",
+        help="Optional: designer notes after each upload (omit for no PATCH)",
     )
     parser.add_argument(
         "--upload-timeout",
@@ -184,8 +184,18 @@ def main() -> int:
         print(f"Not a directory: {root}", file=sys.stderr)
         return 1
 
-    extra = [t.strip() for t in args.tags.split(",") if t.strip()]
-    tags = list(dict.fromkeys([*_DEFAULT_TAGS, *extra]))  # stable dedupe
+    want_patch = args.tags is not None or args.notes is not None
+    patch_body: dict = {}
+    if args.tags is not None:
+        patch_body["tags"] = [t.strip() for t in args.tags.split(",") if t.strip()]
+    if args.notes is not None:
+        patch_body["notes"] = args.notes
+    if want_patch and not patch_body:
+        print(
+            "With --tags/--notes, provide at least one non-empty tag or a notes string.",
+            file=sys.stderr,
+        )
+        return 1
 
     files = list_pexels_files(root)
     if not files:
@@ -209,8 +219,10 @@ def main() -> int:
     if args.dry_run:
         for p in files:
             print(f"  would upload: {p.name}")
-        print(f"tags: {tags}")
-        print(f"notes: {args.notes!r}")
+        if want_patch:
+            print(f"  would PATCH annotations: {patch_body}")
+        else:
+            print("  no annotation PATCH (AI classification only)")
         return 0
 
     ok = 0
@@ -248,31 +260,32 @@ def main() -> int:
             continue
 
         image_id = items[0]["id"]
-        try:
-            patch_annotations(
-                args.base_url,
-                image_id,
-                tags,
-                args.notes,
-                args.patch_timeout,
-            )
-        except urllib.error.HTTPError as e:
-            body = e.read().decode(errors="replace") if e.fp else ""
-            print(
-                f"  Uploaded id={image_id} but annotations failed HTTP {e.code}: {body[:300]}",
-                file=sys.stderr,
-            )
-            failed += 1
-            continue
-        except urllib.error.URLError as e:
-            print(f"  Annotations network error: {e}", file=sys.stderr)
-            if _is_connection_refused(e):
-                print(_BACKEND_HINT.format(url=args.base_url.rstrip("/")), file=sys.stderr)
-                return 1
-            failed += 1
-            continue
-
-        print(f"  → id={image_id}, tags={len(tags)}")
+        if want_patch:
+            try:
+                patch_annotations(
+                    args.base_url,
+                    image_id,
+                    patch_body,
+                    args.patch_timeout,
+                )
+            except urllib.error.HTTPError as e:
+                body = e.read().decode(errors="replace") if e.fp else ""
+                print(
+                    f"  Uploaded id={image_id} but annotations failed HTTP {e.code}: {body[:300]}",
+                    file=sys.stderr,
+                )
+                failed += 1
+                continue
+            except urllib.error.URLError as e:
+                print(f"  Annotations network error: {e}", file=sys.stderr)
+                if _is_connection_refused(e):
+                    print(_BACKEND_HINT.format(url=args.base_url.rstrip("/")), file=sys.stderr)
+                    return 1
+                failed += 1
+                continue
+            print(f"  → id={image_id}, annotations updated")
+        else:
+            print(f"  → id={image_id} (AI only)")
         ok += 1
 
     print(f"Done. ok={ok} failed={failed}")
