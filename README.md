@@ -55,6 +55,7 @@ Dependencies: install with **`pip install -r requirements.txt`** or, if you use 
 
 - **Frontend:** `NEXT_PUBLIC_API_URL` in `.env.local` (see [`app/frontend/.env.example`](app/frontend/.env.example)) points at the FastAPI server.
 - **Backend:** CORS allows `localhost:3000` and `127.0.0.1:3000` by default.
+- **OpenAI (classification):** set `OPENAI_API_KEY` when using [`services/ai_classifier.py`](app/backend/services/ai_classifier.py) (`classify_image`). Optional `OPENAI_MODEL` (default `gpt-4o`). See [`app/backend/.env.example`](app/backend/.env.example).
 
 ## Repository layout
 

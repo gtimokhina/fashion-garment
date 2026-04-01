@@ -10,6 +10,7 @@ fastapi = ">=0.115.0"
 uvicorn = { version = ">=0.32.0", extras = ["standard"] }
 sqlmodel = ">=0.0.22"
 python-multipart = ">=0.0.9"
+openai = ">=1.55.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
