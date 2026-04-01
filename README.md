@@ -34,6 +34,8 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8000
 API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)  
 Health check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
 
+**Images:** `GET /api/images` with optional filters (substring, case-insensitive): `garment_type`, `style`, `occasion`, `color_palette`, `color` (alias for palette text), `q` or `search` (description). **Facets** for the filter UI: `GET /api/images/facets` (distinct metadata values).
+
 Optional: copy [`app/backend/.env.example`](app/backend/.env.example) to `app/backend/.env` and set `DATABASE_URL` or comma-separated `CORS_ORIGINS`.
 
 ### 2. Frontend (Next.js)

@@ -13,6 +13,7 @@ from services import image_service
 from services.ai_classifier import classification_metadata, classify_image
 from services.config import BACKEND_ROOT
 from services import image_crud
+from services import image_filters
 
 router = APIRouter(prefix="/images", tags=["images"])
 
@@ -31,6 +32,15 @@ class ImageOut(BaseModel):
 
 class ImageListResponse(BaseModel):
     items: list[ImageOut]
+
+
+class ImageFacetsOut(BaseModel):
+    """Distinct metadata values in the library (for dynamic filter controls)."""
+
+    garment_types: list[str]
+    styles: list[str]
+    occasions: list[str]
+    color_palettes: list[str]
 
 
 class ImageUpdateBody(BaseModel):
@@ -57,8 +67,41 @@ def _to_out(request: Request, row: Image) -> ImageOut:
 
 
 @router.get("", response_model=ImageListResponse)
-def list_images(request: Request, session: Session = Depends(get_session)):
-    rows = image_crud.list_images(session)
+def list_images(
+    request: Request,
+    session: Session = Depends(get_session),
+    garment_type: Optional[str] = None,
+    style: Optional[str] = None,
+    occasion: Optional[str] = None,
+    color: Optional[str] = None,
+    color_palette: Optional[str] = None,
+    q: Optional[str] = None,
+    search: Optional[str] = None,
+):
+    """
+    List images. Filters use case-insensitive substring match on metadata JSON
+    (except description uses ``q`` / ``search``). ``color`` is shorthand for
+    searching inside ``color_palette``.
+    """
+    palette: Optional[str] = None
+    if color_palette not in (None, ""):
+        palette = color_palette
+    elif color not in (None, ""):
+        palette = color
+
+    desc: Optional[str] = None
+    if q not in (None, ""):
+        desc = q
+    elif search not in (None, ""):
+        desc = search
+    rows = image_filters.query_images(
+        session,
+        garment_type=garment_type,
+        style=style,
+        occasion=occasion,
+        color_palette=palette,
+        description_query=desc,
+    )
     return ImageListResponse(items=[_to_out(request, r) for r in rows])
 
 
@@ -91,6 +134,12 @@ async def upload_image(
         annotations={},
     )
     return _to_out(request, row)
+
+
+@router.get("/facets", response_model=ImageFacetsOut)
+def image_facets(session: Session = Depends(get_session)):
+    data = image_filters.get_image_facets(session)
+    return ImageFacetsOut(**data)
 
 
 @router.get("/{image_id}", response_model=ImageOut)
