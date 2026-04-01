@@ -37,3 +37,10 @@ htmlcov/
 .next/
 out/
 *.local
+
+# Backend (Python) — local DB and uploads
+app/backend/.venv/
+app/backend/venv/
+app/backend/data/*.db
+app/backend/data/*.sqlite*
+app/backend/uploads/

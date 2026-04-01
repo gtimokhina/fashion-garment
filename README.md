@@ -6,36 +6,77 @@ Lightweight AI-powered web app for fashion designers to organize, search, and re
 
 Design teams collect large numbers of inspiration photos; this project explores turning that library into a searchable, annotated resource with AI-assisted garment classification and designer-added metadata.
 
+## Stack
+
+| Layer | Technology |
+|--------|------------|
+| Frontend | Next.js (App Router, TypeScript, Tailwind) in [`app/frontend`](app/frontend) |
+| Backend | FastAPI + SQLModel + SQLite in [`app/backend`](app/backend) |
+| Database | SQLite file under `app/backend/data/` (created on first run) |
+
 ## Prerequisites
 
-To be filled in once the application stack is chosen (e.g. Node.js, Python, database requirements).
+- **Node.js** 20+ (for Next.js)
+- **Python** 3.11+ (for FastAPI)
 
 ## Local setup
 
-Setup instructions will be added when the `app/` implementation is in place. The goal is minimal steps to run locally.
+### 1. Backend (FastAPI)
+
+```bash
+cd app/backend
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn garment_api.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)  
+Health check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
+
+Optional: copy [`app/backend/.env.example`](app/backend/.env.example) to `app/backend/.env` and set `DATABASE_URL` or comma-separated `CORS_ORIGINS`.
+
+### 2. Frontend (Next.js)
+
+In a **second** terminal:
+
+```bash
+cd app/frontend
+npm install
+cp .env.example .env.local   # optional; defaults to http://127.0.0.1:8000
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). The home page includes a small **API status** panel that calls `/health` on the backend (start the backend first, or you will see “unreachable”).
+
+### Environment
+
+- **Frontend:** `NEXT_PUBLIC_API_URL` in `.env.local` (see [`app/frontend/.env.example`](app/frontend/.env.example)) points at the FastAPI server.
+- **Backend:** CORS allows `localhost:3000` and `127.0.0.1:3000` by default.
 
 ## Repository layout
 
 | Path | Purpose |
 |------|---------|
-| `app/` | Application source (web UI and backend). |
+| `app/frontend/` | Next.js UI. |
+| `app/backend/` | FastAPI app package `garment_api`, SQLite under `data/`. |
 | `eval/` | Model evaluation scripts and labeled test set (50–100 images, gold attributes). |
-| `tests/` | Unit tests (e.g. model output parsing), integration tests (filters), end-to-end tests (upload → classify → filter). |
+| `tests/` | Unit, integration, and end-to-end tests. |
 | `tests/unit/` | Unit tests. |
 | `tests/integration/` | Integration tests. |
 | `tests/e2e/` | End-to-end tests. |
 
 ## Architecture
 
-Architectural choices and stack notes will be documented here after implementation.
+The browser talks only to **Next.js** for pages and static assets. Client-side `fetch` uses `NEXT_PUBLIC_API_URL` to reach **FastAPI** (JSON, uploads, and future search endpoints). **SQLite** is opened exclusively from the Python process; the database file is not shared with Node.
 
 ## Evaluation
 
-See `eval/` for scripts, labeled data, and instructions. A short summary of per-attribute accuracy and model strengths/limitations will be added to this section (or linked from `eval/`).
+See `eval/` for scripts, labeled data, and instructions. A short summary of per-attribute accuracy and model strengths/limitations will be added here or linked from `eval/`.
 
 ## Testing
 
-How to run tests will be documented once the test runner and stack are configured. Planned coverage:
+Commands will be added once pytest / frontend test runner are wired. Planned coverage:
 
 - Unit: parsing multimodal model output into structured attributes.
 - Integration: filter behavior (especially location and time).
