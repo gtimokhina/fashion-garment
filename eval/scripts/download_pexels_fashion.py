@@ -5,7 +5,7 @@ Download fashion stock photos using the official Pexels API.
 The website https://www.pexels.com/search/fashion/ is not meant for bulk scraping;
 use the free API instead: https://www.pexels.com/api/
 
-  export PEXELS_API_KEY=your_key
+  # Key is read from app/backend/.env (PEXELS_API_KEY) if set there, else from the environment.
   python eval/scripts/download_pexels_fashion.py
 
 Optional: --count 50 --query fashion --out eval/data/pexels_fashion
@@ -27,6 +27,36 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "eval" / "data" / "pexels_fashion"
 API_SEARCH = "https://api.pexels.com/v1/search"
+BACKEND_ENV = REPO_ROOT / "app" / "backend" / ".env"
+
+
+def load_backend_dotenv() -> None:
+    """Load KEY=value pairs from app/backend/.env into os.environ if not already set."""
+    if not BACKEND_ENV.is_file():
+        return
+    try:
+        text = BACKEND_ENV.read_text(encoding="utf-8")
+    except OSError:
+        return
+    if text.startswith("\ufeff"):
+        text = text[1:]
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].strip()
+        if "=" not in line:
+            continue
+        key, _, val = line.partition("=")
+        key = key.strip()
+        if not key:
+            continue
+        val = val.strip()
+        if len(val) >= 2 and val[0] == val[-1] and val[0] in "\"'":
+            val = val[1:-1]
+        if key not in os.environ:
+            os.environ[key] = val
 
 
 def fetch_page(query: str, per_page: int, page: int, api_key: str) -> dict:
@@ -69,11 +99,12 @@ def main() -> int:
     )
     args = parser.parse_args()
 
+    load_backend_dotenv()
     api_key = (os.environ.get("PEXELS_API_KEY") or "").strip()
     if not api_key:
         print(
-            "Missing PEXELS_API_KEY. Create a free key at https://www.pexels.com/api/ "
-            "then run:\n  export PEXELS_API_KEY=your_key",
+            "Missing PEXELS_API_KEY. Add it to app/backend/.env or export it. "
+            "Create a free key at https://www.pexels.com/api/",
             file=sys.stderr,
         )
         return 1

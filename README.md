@@ -79,14 +79,13 @@ The browser talks only to **Next.js** for pages and static assets. Client-side `
 
 See `eval/` for scripts, labeled data, and instructions. A short summary of per-attribute accuracy and model strengths/limitations will be added here or linked from `eval/`.
 
-**Bulk fashion images (Pexels):** use the official API (not the search webpage). Get a free key at [pexels.com/api](https://www.pexels.com/api/), then:
+**Bulk fashion images (Pexels):** use the official API (not the search webpage). Get a free key at [pexels.com/api](https://www.pexels.com/api/), add `PEXELS_API_KEY=...` to `app/backend/.env` (same file as the backend), then:
 
 ```bash
-export PEXELS_API_KEY=your_key
 python eval/scripts/download_pexels_fashion.py   # 50 × "fashion" → eval/data/pexels_fashion/
 ```
 
-Options: `--count 50`, `--query fashion`, `--out path`.
+You can also `export PEXELS_API_KEY=...` to override. Options: `--count 50`, `--query fashion`, `--out path`.
 
 ## Testing
 
