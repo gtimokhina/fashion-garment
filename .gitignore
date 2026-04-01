@@ -49,6 +49,7 @@ app/backend/uploads/
 eval/data/pexels_fashion/*
 !eval/data/pexels_fashion/.gitkeep
 
-# Eval: local test images (keep .gitkeep only)
+# Eval: exported from DB (regenerate with export_dataset_from_db.py)
+eval/data/example_dataset/labels.json
 eval/data/example_dataset/images/*
 !eval/data/example_dataset/images/.gitkeep

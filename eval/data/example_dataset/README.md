@@ -2,6 +2,23 @@
 
 Place **images** under `images/` and list them with gold labels in **`labels.json`**.
 
+## Populate from the app database
+
+To copy every library image from `app/backend/uploads/` and build `labels.json` from stored **metadata** (same fields the classifier saved: `garment_type`, `style`, `occasion`, `color_palette` → label `color`):
+
+```bash
+cd app/backend && source .venv/bin/activate
+python3 ../../eval/scripts/export_dataset_from_db.py
+```
+
+Then run the evaluation pipeline (re-classifies each file and compares to the labels above):
+
+```bash
+python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset --verbose
+```
+
+Gold labels come from the DB snapshot; `run_eval.py` runs **fresh** vision calls, so scores reflect agreement between a new classification and the stored metadata (useful for regression / consistency checks).
+
 ## `labels.json` schema
 
 Top level:

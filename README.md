@@ -86,7 +86,9 @@ cd app/backend && source .venv/bin/activate   # optional
 python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset
 ```
 
-Dataset format: [`eval/data/example_dataset/README.md`](eval/data/example_dataset/README.md) and [`labels.example.json`](eval/data/example_dataset/labels.example.json). Requires `OPENAI_*` in `app/backend/.env`. Use `--verbose` for per-image tables and `--output-json path` for machine-readable results.
+Dataset format: [`eval/data/example_dataset/README.md`](eval/data/example_dataset/README.md) and [`labels.example.json`](eval/data/example_dataset/labels.example.json). **Export from DB** (images + labels from stored metadata): `python3 eval/scripts/export_dataset_from_db.py` from `app/backend`, or from repo root: `bash eval/run_example_eval.sh` (export + eval in one step).
+
+Requires `OPENAI_*` in `app/backend/.env`. Use `--verbose` for per-image tables and `--output-json path` for machine-readable results.
 
 **Bulk fashion images (Pexels):** use the official API (not the search webpage). Get a free key at [pexels.com/api](https://www.pexels.com/api/), add `PEXELS_API_KEY=...` to `app/backend/.env` (same file as the backend), then:
 
