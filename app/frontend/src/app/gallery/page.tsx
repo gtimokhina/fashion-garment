@@ -24,11 +24,10 @@ type Facets = {
   color_palettes: string[];
 };
 
-function shortDescription(text: string, max = 120): string {
+function altFromDescription(text: string, max = 100): string {
   const t = text.trim();
-  if (!t) return "No description yet.";
-  if (t.length <= max) return t;
-  return `${t.slice(0, max).trim()}…`;
+  if (!t) return "Fashion inspiration image";
+  return t.length <= max ? t : `${t.slice(0, max).trim()}…`;
 }
 
 function buildImagesQuery(params: {
@@ -280,20 +279,13 @@ export default function GalleryPage() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={img.url}
-                      alt={shortDescription(img.description, 80)}
+                      alt={altFromDescription(img.description)}
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                       loading="lazy"
                     />
                   </div>
                   <div className="space-y-3 border-t border-zinc-100 p-4 dark:border-zinc-800">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">
-                        AI description
-                      </p>
-                      <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-                        {shortDescription(img.description)}
-                      </p>
-                    </div>
+                    <DescriptionBlock description={img.description} />
                     <DesignerAnnotationsBlock annotations={img.annotations} />
                   </div>
                 </li>
@@ -302,6 +294,54 @@ export default function GalleryPage() {
           </>
         ) : null}
       </section>
+    </div>
+  );
+}
+
+/** Long descriptions collapse to 3 lines; chevron toggles full text. */
+function DescriptionBlock({ description }: { description: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const trimmed = description.trim();
+  const body = trimmed || "No description yet.";
+  const collapsible = trimmed.length > 200;
+
+  return (
+    <div>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">
+          Description
+        </p>
+        {collapsible ? (
+          <button
+            type="button"
+            onClick={() => setExpanded((e) => !e)}
+            className="-mr-1 -mt-0.5 shrink-0 rounded-md p-1 text-violet-600 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-950/40"
+            aria-expanded={expanded}
+            aria-label={expanded ? "Collapse description" : "Expand description"}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className={`h-4 w-4 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+              aria-hidden
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        ) : null}
+      </div>
+      <p
+        className={`mt-1 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300 ${
+          collapsible && !expanded ? "line-clamp-3" : ""
+        }`}
+      >
+        {body}
+      </p>
     </div>
   );
 }
