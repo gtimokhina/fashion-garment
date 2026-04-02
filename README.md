@@ -65,7 +65,8 @@ The backend reads **`.env` at the project root**. [Docker Compose](#docker) uses
 
 ```bash
 cd app/backend
-python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python3 -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
