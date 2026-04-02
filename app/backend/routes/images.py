@@ -26,6 +26,10 @@ class ImageOut(BaseModel):
     description: str
     metadata: dict[str, Any] = Field(description="AI structured attributes")
     annotations: dict[str, Any]
+    ai_raw_response: Optional[str] = Field(
+        default=None,
+        description="Raw JSON text from the model (normalized) when available; null for older rows.",
+    )
     created_at: datetime
     semantic_score: Optional[float] = Field(
         default=None,
@@ -71,13 +75,26 @@ class ImageBatchUploadResponse(BaseModel):
     errors: list[UploadErrorOut]
 
 
-class ImageFacetsOut(BaseModel):
-    """Distinct metadata values in the library (for dynamic filter controls)."""
+class FacetValueOut(BaseModel):
+    """Single facet value with image count (refined by other active facet filters)."""
 
-    garment_types: list[str]
-    styles: list[str]
-    occasions: list[str]
-    color_palettes: list[str]
+    value: str
+    count: int
+
+
+class ImageFacetsOut(BaseModel):
+    """Facet values with counts for dynamic filter controls (see ``GET /images/facets``)."""
+
+    garment_types: list[FacetValueOut]
+    styles: list[FacetValueOut]
+    materials: list[FacetValueOut]
+    color_palettes: list[FacetValueOut]
+    patterns: list[FacetValueOut]
+    seasons: list[FacetValueOut]
+    occasions: list[FacetValueOut]
+    consumer_profiles: list[FacetValueOut]
+    trend_notes: list[FacetValueOut]
+    location_contexts: list[FacetValueOut]
 
 
 class ImageUpdateBody(BaseModel):
@@ -91,6 +108,7 @@ class AnnotationsPatchBody(BaseModel):
 
     tags: Optional[list[str]] = None
     notes: Optional[str] = None
+    designer: Optional[str] = None
 
 
 def _public_file_url(request: Request, file_path: str) -> str:
@@ -113,6 +131,7 @@ def _to_out(
         description=row.description,
         metadata=row.meta,
         annotations=row.annotations,
+        ai_raw_response=row.ai_raw_response,
         created_at=row.created_at,
         semantic_score=semantic_score,
         keyword_score=keyword_score,
@@ -132,11 +151,12 @@ async def _ingest_one_upload(
     except ValueError as e:
         return None, str(e)
     try:
-        classification = classify_image(abs_path)
+        classification_result = classify_image(abs_path)
     except Exception as e:
         abs_path.unlink(missing_ok=True)
         return None, f"Image classification failed: {e}"
 
+    classification = classification_result.classification
     meta = classification_metadata(classification)
     row = image_crud.create_image(
         session,
@@ -144,6 +164,7 @@ async def _ingest_one_upload(
         description=classification.description,
         metadata=meta,
         annotations=normalize_annotations({}),
+        ai_raw_response=classification_result.raw_json,
     )
     return _to_out(request, row), None
 
@@ -154,9 +175,15 @@ def list_images(
     session: Session = Depends(get_session),
     garment_type: Optional[str] = None,
     style: Optional[str] = None,
-    occasion: Optional[str] = None,
+    material: Optional[str] = None,
     color: Optional[str] = None,
     color_palette: Optional[str] = None,
+    pattern: Optional[str] = None,
+    season: Optional[str] = None,
+    occasion: Optional[str] = None,
+    consumer_profile: Optional[str] = None,
+    trend_notes: Optional[str] = None,
+    location_context: Optional[str] = None,
     q: Optional[str] = None,
     search: Optional[str] = None,
     semantic: bool = Query(
@@ -169,19 +196,27 @@ def list_images(
     ),
 ):
     """
-    List images. Metadata filters: case-insensitive substring on JSON fields.
-    ``q`` / ``search`` matches **description**, annotation **notes**, and any **tag**
-    (substring). ``color`` is shorthand for ``color_palette``.
+    List images. Metadata filters: case-insensitive substring on JSON fields (see
+    ``META_FILTER_KEYS`` in ``image_filters``). ``q`` / ``search`` matches **description**,
+    annotation **notes**, and any **tag** (substring). ``color`` is shorthand for ``color_palette``.
     With ``semantic=true`` and non-empty ``q``: default **hybrid** ranking
     ``combined_score = 0.5 * keyword_score + 0.5 * embedding_similarity`` (see each item).
     Set ``hybrid=false`` for embedding-only thresholding (legacy). ``keyword_fallback``
     if the API falls back to SQL substring-only results.
     """
-    palette: Optional[str] = None
-    if color_palette not in (None, ""):
-        palette = color_palette
-    elif color not in (None, ""):
-        palette = color
+    meta_filters = image_filters.build_meta_filters(
+        garment_type=garment_type,
+        style=style,
+        material=material,
+        color=color,
+        color_palette=color_palette,
+        pattern=pattern,
+        season=season,
+        occasion=occasion,
+        consumer_profile=consumer_profile,
+        trend_notes=trend_notes,
+        location_context=location_context,
+    )
 
     desc: Optional[str] = None
     if q not in (None, ""):
@@ -193,10 +228,7 @@ def list_images(
         if hybrid:
             result = image_filters.query_images_hybrid(
                 session,
-                garment_type=garment_type,
-                style=style,
-                occasion=occasion,
-                color_palette=palette,
+                meta_filters=meta_filters,
                 search_query=desc,
             )
             items_out = [
@@ -223,10 +255,7 @@ def list_images(
 
         result = image_filters.query_images_semantic(
             session,
-            garment_type=garment_type,
-            style=style,
-            occasion=occasion,
-            color_palette=palette,
+            meta_filters=meta_filters,
             search_query=desc,
         )
         items_out = [
@@ -242,10 +271,7 @@ def list_images(
 
     rows = image_filters.query_images(
         session,
-        garment_type=garment_type,
-        style=style,
-        occasion=occasion,
-        color_palette=palette,
+        meta_filters=meta_filters,
         description_query=desc,
     )
     return ImageListResponse(items=[_to_out(request, r) for r in rows])
@@ -276,8 +302,39 @@ async def upload_images(
 
 
 @router.get("/facets", response_model=ImageFacetsOut)
-def image_facets(session: Session = Depends(get_session)):
-    data = image_filters.get_image_facets(session)
+def image_facets(
+    session: Session = Depends(get_session),
+    garment_type: Optional[str] = None,
+    style: Optional[str] = None,
+    material: Optional[str] = None,
+    color: Optional[str] = None,
+    color_palette: Optional[str] = None,
+    pattern: Optional[str] = None,
+    season: Optional[str] = None,
+    occasion: Optional[str] = None,
+    consumer_profile: Optional[str] = None,
+    trend_notes: Optional[str] = None,
+    location_context: Optional[str] = None,
+):
+    """
+    Facet values with counts. Each dimension's counts apply all other facet filters
+    but not that dimension (standard faceted search). Omit query params for global
+    counts. ``color`` is an alias for ``color_palette``.
+    """
+    active = image_filters.build_active_filters_dict(
+        garment_type=garment_type,
+        style=style,
+        material=material,
+        color=color,
+        color_palette=color_palette,
+        pattern=pattern,
+        season=season,
+        occasion=occasion,
+        consumer_profile=consumer_profile,
+        trend_notes=trend_notes,
+        location_context=location_context,
+    )
+    data = image_filters.get_image_facets(session, active_filters=active)
     return ImageFacetsOut(**data)
 
 
@@ -296,15 +353,20 @@ def patch_annotations(
     request: Request,
     session: Session = Depends(get_session),
 ):
-    if body.tags is None and body.notes is None:
+    if body.tags is None and body.notes is None and body.designer is None:
         raise HTTPException(
             status_code=400,
-            detail="Provide at least one of: tags, notes",
+            detail="Provide at least one of: tags, notes, designer",
         )
     row = image_crud.get_image(session, image_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Image not found")
-    merged = merge_annotation_patch(row.annotations, tags=body.tags, notes=body.notes)
+    merged = merge_annotation_patch(
+        row.annotations,
+        tags=body.tags,
+        notes=body.notes,
+        designer=body.designer,
+    )
     row = image_crud.update_image(session, image_id, annotations=merged)
     if row is None:
         raise HTTPException(status_code=404, detail="Image not found")

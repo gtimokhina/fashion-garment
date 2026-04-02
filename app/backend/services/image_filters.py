@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
+from typing import Any
 
 from sqlalchemy import String, and_, cast, func, or_, select, text
 from sqlalchemy.orm import Session
@@ -18,19 +20,32 @@ from services.config import (
 _HYBRID_W_KEYWORD = 0.5
 _HYBRID_W_EMBEDDING = 0.5
 
-# json_extract paths for AI metadata (column `metadata` in DB, `meta` on model).
-_JSON_PATHS = {
-    "garment_type": "$.garment_type",
-    "style": "$.style",
-    "occasion": "$.occasion",
-    "color_palette": "$.color_palette",
-}
+# Metadata JSON keys accepted for substring filters (``value`` or legacy string).
+META_FILTER_KEYS: tuple[str, ...] = (
+    "garment_type",
+    "style",
+    "material",
+    "color_palette",
+    "pattern",
+    "season",
+    "occasion",
+    "consumer_profile",
+    "trend_notes",
+    "location_context",
+)
 
-_FACET_KEYS = {
-    "garment_types": "$.garment_type",
-    "styles": "$.style",
-    "occasions": "$.occasion",
-    "color_palettes": "$.color_palette",
+# API response keys for GET /facets → meta JSON key (refined faceting per dimension).
+_META_FACET_KEYS: dict[str, str] = {
+    "garment_types": "garment_type",
+    "styles": "style",
+    "materials": "material",
+    "color_palettes": "color_palette",
+    "patterns": "pattern",
+    "seasons": "season",
+    "occasions": "occasion",
+    "consumer_profiles": "consumer_profile",
+    "trend_notes": "trend_notes",
+    "location_contexts": "location_context",
 }
 
 
@@ -38,13 +53,20 @@ def _escape_like(pattern: str) -> str:
     return pattern.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
-def _json_substring_match(column_path: str, needle: str):
+def _meta_value_like_expr(key: str):
+    """Coalesce ``$.key.value`` (new shape) with ``$.key`` (legacy plain string)."""
+    return func.coalesce(
+        cast(func.json_extract(Image.meta, f"$.{key}.value"), String),
+        cast(func.json_extract(Image.meta, f"$.{key}"), String),
+        "",
+    )
+
+
+def _json_substring_match_key(key: str, needle: str):
     if not needle or not needle.strip():
         return None
     inner = _escape_like(needle.strip().lower())
-    blob = func.lower(
-        cast(func.coalesce(func.json_extract(Image.meta, column_path), ""), String)
-    )
+    blob = func.lower(_meta_value_like_expr(key))
     return blob.like(f"%{inner}%", escape="\\")
 
 
@@ -78,27 +100,20 @@ def _keyword_score(row: Image, raw_needle: str) -> float:
 def query_images(
     session: Session,
     *,
-    garment_type: str | None = None,
-    style: str | None = None,
-    occasion: str | None = None,
-    color_palette: str | None = None,
+    meta_filters: dict[str, str] | None = None,
     description_query: str | None = None,
 ) -> list[Image]:
+    """
+    Filter images by substring match on structured metadata (case-insensitive).
+    ``meta_filters`` keys must be in ``META_FILTER_KEYS``; unknown keys are ignored.
+    """
     stmt = select(Image).order_by(Image.created_at.desc())
     clauses: list = []
-
-    c = _json_substring_match(_JSON_PATHS["garment_type"], garment_type or "")
-    if c is not None:
-        clauses.append(c)
-    c = _json_substring_match(_JSON_PATHS["style"], style or "")
-    if c is not None:
-        clauses.append(c)
-    c = _json_substring_match(_JSON_PATHS["occasion"], occasion or "")
-    if c is not None:
-        clauses.append(c)
-    c = _json_substring_match(_JSON_PATHS["color_palette"], color_palette or "")
-    if c is not None:
-        clauses.append(c)
+    mf = {k: v for k, v in (meta_filters or {}).items() if k in META_FILTER_KEYS and v and str(v).strip()}
+    for key, needle in mf.items():
+        c = _json_substring_match_key(key, needle)
+        if c is not None:
+            clauses.append(c)
 
     if description_query and description_query.strip():
         raw_needle = description_query.strip().lower()
@@ -111,7 +126,6 @@ def query_images(
                 String,
             )
         ).like(pattern, escape="\\")
-        # Tags: substring match without LIKE (avoids ESCAPE issues in raw SQL).
         tags_clause = text(
             "EXISTS (SELECT 1 FROM json_each("
             "COALESCE(json_extract(image.annotations, '$.tags'), json_array())"
@@ -148,10 +162,7 @@ class HybridSearchResult:
 def query_images_hybrid(
     session: Session,
     *,
-    garment_type: str | None = None,
-    style: str | None = None,
-    occasion: str | None = None,
-    color_palette: str | None = None,
+    meta_filters: dict[str, str] | None = None,
     search_query: str | None = None,
 ) -> HybridSearchResult:
     """
@@ -177,14 +188,7 @@ def query_images_hybrid(
     from services import embeddings as emb
 
     q_raw = (search_query or "").strip()
-    candidates = query_images(
-        session,
-        garment_type=garment_type,
-        style=style,
-        occasion=occasion,
-        color_palette=color_palette,
-        description_query=None,
-    )
+    candidates = query_images(session, meta_filters=meta_filters, description_query=None)
     if not q_raw:
         z = [0.0] * len(candidates)
         return HybridSearchResult(
@@ -215,14 +219,7 @@ def query_images_hybrid(
     kept = [t for t in scored if t[3] >= min_combined]
 
     if not kept:
-        rows = query_images(
-            session,
-            garment_type=garment_type,
-            style=style,
-            occasion=occasion,
-            color_palette=color_palette,
-            description_query=q_raw,
-        )
+        rows = query_images(session, meta_filters=meta_filters, description_query=q_raw)
         z = [0.0] * len(rows)
         return HybridSearchResult(
             items=rows,
@@ -244,10 +241,7 @@ def query_images_hybrid(
 def query_images_semantic(
     session: Session,
     *,
-    garment_type: str | None = None,
-    style: str | None = None,
-    occasion: str | None = None,
-    color_palette: str | None = None,
+    meta_filters: dict[str, str] | None = None,
     search_query: str | None = None,
 ) -> SemanticSearchResult:
     """
@@ -260,14 +254,7 @@ def query_images_semantic(
     from services import embeddings as emb
 
     q_raw = (search_query or "").strip()
-    candidates = query_images(
-        session,
-        garment_type=garment_type,
-        style=style,
-        occasion=occasion,
-        color_palette=color_palette,
-        description_query=None,
-    )
+    candidates = query_images(session, meta_filters=meta_filters, description_query=None)
     if not q_raw:
         return SemanticSearchResult(items=candidates, scores=[0.0] * len(candidates))
 
@@ -287,14 +274,7 @@ def query_images_semantic(
         scored.append((s, row))
 
     if not scored:
-        rows = query_images(
-            session,
-            garment_type=garment_type,
-            style=style,
-            occasion=occasion,
-            color_palette=color_palette,
-            description_query=q_raw,
-        )
+        rows = query_images(session, meta_filters=meta_filters, description_query=q_raw)
         return SemanticSearchResult(
             items=rows,
             scores=[0.0] * len(rows),
@@ -307,14 +287,7 @@ def query_images_semantic(
     kept = [(s, r) for s, r in scored if s >= threshold]
 
     if not kept:
-        rows = query_images(
-            session,
-            garment_type=garment_type,
-            style=style,
-            occasion=occasion,
-            color_palette=color_palette,
-            description_query=q_raw,
-        )
+        rows = query_images(session, meta_filters=meta_filters, description_query=q_raw)
         return SemanticSearchResult(
             items=rows,
             scores=[0.0] * len(rows),
@@ -328,14 +301,121 @@ def query_images_semantic(
     )
 
 
-def get_image_facets(session: Session) -> dict[str, list[str]]:
-    out: dict[str, list[str]] = {}
-    for facet_key, path in _FACET_KEYS.items():
-        stmt = select(func.json_extract(Image.meta, path)).distinct()
-        vals = session.scalars(stmt).all()
-        cleaned = sorted(
-            {(str(v) or "").strip() for v in vals if v is not None and str(v).strip()},
-            key=str.lower,
-        )
-        out[facet_key] = cleaned
+def _facet_filters_excluding(
+    active: dict[str, str | None],
+    exclude_meta_key: str,
+) -> dict[str, str]:
+    """Build meta_filters for queries, omitting one dimension for refined faceting."""
+    out: dict[str, str] = {}
+    for k in META_FILTER_KEYS:
+        if k == exclude_meta_key:
+            continue
+        v = active.get(k)
+        if v is not None and str(v).strip():
+            out[k] = str(v).strip()
     return out
+
+
+def get_image_facets(
+    session: Session,
+    *,
+    active_filters: dict[str, str | None] | None = None,
+) -> dict[str, list[dict[str, Any]]]:
+    """
+    Faceted value counts for filter UI.
+
+    For each facet dimension, counts exclude that dimension's filter but apply all
+    other facet filters (refined faceting). Uses the same substring semantics as
+    ``query_images``.     ``metadata`` values are read via ``meta_field_value`` (legacy
+    strings or ``value``+``confidence`` objects).
+    """
+    from services.metadata_fields import meta_field_value
+
+    active: dict[str, str | None] = {k: v for k, v in (active_filters or {}).items()}
+
+    out: dict[str, list[dict[str, Any]]] = {}
+    for facet_key, meta_key in _META_FACET_KEYS.items():
+        mf = _facet_filters_excluding(active, meta_key)
+        rows = query_images(session, meta_filters=mf, description_query=None)
+        counts: Counter[str] = Counter()
+
+        for row in rows:
+            meta = row.meta
+            if not isinstance(meta, dict):
+                continue
+            v = meta_field_value(meta.get(meta_key))
+            if v:
+                counts[v] += 1
+
+        items = [{"value": k, "count": counts[k]} for k in sorted(counts.keys(), key=str.lower)]
+        out[facet_key] = items
+    return out
+
+
+def _z(v: str | None) -> str | None:
+    if v is None or not str(v).strip():
+        return None
+    return str(v).strip()
+
+
+def build_active_filters_dict(
+    *,
+    garment_type: str | None = None,
+    style: str | None = None,
+    material: str | None = None,
+    color: str | None = None,
+    color_palette: str | None = None,
+    pattern: str | None = None,
+    season: str | None = None,
+    occasion: str | None = None,
+    consumer_profile: str | None = None,
+    trend_notes: str | None = None,
+    location_context: str | None = None,
+) -> dict[str, str | None]:
+    """All meta filter dimensions for faceting (None = no filter). ``color`` aliases ``color_palette``."""
+    palette = color_palette
+    if palette in (None, "") and color not in (None, ""):
+        palette = color
+    return {
+        "garment_type": _z(garment_type),
+        "style": _z(style),
+        "material": _z(material),
+        "color_palette": _z(palette),
+        "pattern": _z(pattern),
+        "season": _z(season),
+        "occasion": _z(occasion),
+        "consumer_profile": _z(consumer_profile),
+        "trend_notes": _z(trend_notes),
+        "location_context": _z(location_context),
+    }
+
+
+def build_meta_filters(
+    *,
+    garment_type: str | None = None,
+    style: str | None = None,
+    material: str | None = None,
+    color: str | None = None,
+    color_palette: str | None = None,
+    pattern: str | None = None,
+    season: str | None = None,
+    occasion: str | None = None,
+    consumer_profile: str | None = None,
+    trend_notes: str | None = None,
+    location_context: str | None = None,
+) -> dict[str, str]:
+    """Collect non-empty query params into a ``meta_filters`` dict for ``query_images``."""
+    af = build_active_filters_dict(
+        garment_type=garment_type,
+        style=style,
+        material=material,
+        color=color,
+        color_palette=color_palette,
+        pattern=pattern,
+        season=season,
+        occasion=occasion,
+        consumer_profile=consumer_profile,
+        trend_notes=trend_notes,
+        location_context=location_context,
+    )
+    return {k: v for k, v in af.items() if v is not None}

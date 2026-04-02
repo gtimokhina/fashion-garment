@@ -2,8 +2,8 @@
 """
 Populate designer tags and notes from each row's AI description + structured metadata.
 
-Calls the same OpenAI model as classification to suggest searchable tags (including
-synonyms grounded in the description) and a short notes line. By default replaces
+Calls the same OpenAI model as classification to suggest **3–5** tags and **one short
+sentence** of notes (compact; no “The image features…” openings). By default replaces
 existing annotations; use --merge to union tags and append notes.
 
   cd app/backend && source .venv/bin/activate

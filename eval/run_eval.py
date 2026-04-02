@@ -41,8 +41,11 @@ def normalize_whitespace(s: str) -> str:
 
 def prediction_for_label_key(pred: ImageClassification, label_key: str) -> str:
     if label_key == "color":
-        return pred.color_palette
-    return getattr(pred, label_key, "") or ""
+        return pred.color_palette.value
+    attr = getattr(pred, label_key, None)
+    if attr is None:
+        return ""
+    return attr.value if hasattr(attr, "value") else str(attr)
 
 
 def match_field(gold: str, pred: str, label_key: str, *, color_mode: str) -> bool:
@@ -134,7 +137,7 @@ def run_eval(
             continue
 
         try:
-            pred = classify_image(img_path)
+            pred = classify_image(img_path).classification
         except Exception as e:
             state.errors.append(f"{rel}: classify_image failed: {e}")
             continue

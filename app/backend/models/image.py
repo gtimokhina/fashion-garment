@@ -31,6 +31,8 @@ class Image(Base):
         nullable=False,
         default=lambda: {},
     )
+    # Raw JSON text from the vision model (after fence stripping) for debugging / UI.
+    ai_raw_response: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     description_embedding: Mapped[Optional[List[float]]] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

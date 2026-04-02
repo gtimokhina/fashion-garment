@@ -8,6 +8,7 @@ Requires the API up (e.g. uvicorn) and OPENAI_* set for classification.
   python3 eval/scripts/ingest_pexels_to_backend.py
   python3 eval/scripts/ingest_pexels_to_backend.py --tags "moodboard" --notes "Winter drop refs"
   python3 eval/scripts/ingest_pexels_to_backend.py --base-url http://127.0.0.1:8000 --dry-run
+  python3 eval/scripts/ingest_pexels_to_backend.py --sync-annotations   # also fill tags/notes from description
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ import errno
 import json
 import mimetypes
 import os
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -177,6 +179,11 @@ def main() -> int:
         action="store_true",
         help="List files only; do not call the API",
     )
+    parser.add_argument(
+        "--sync-annotations",
+        action="store_true",
+        help="After successful uploads, run sync_annotations_from_description.py (needs OPENAI_*; uses this Python from app/backend cwd)",
+    )
     args = parser.parse_args()
 
     root = args.dir.resolve()
@@ -289,6 +296,21 @@ def main() -> int:
         ok += 1
 
     print(f"Done. ok={ok} failed={failed}")
+
+    if args.sync_annotations and not args.dry_run and ok > 0:
+        backend = REPO_ROOT / "app" / "backend"
+        script = backend / "scripts" / "sync_annotations_from_description.py"
+        if not script.is_file():
+            print(f"Missing {script}", file=sys.stderr)
+            return 1
+        print("Running sync_annotations_from_description.py …", flush=True)
+        r = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=str(backend),
+        )
+        if r.returncode != 0:
+            return r.returncode
+
     return 0 if failed == 0 else 2
 
 

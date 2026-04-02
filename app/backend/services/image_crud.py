@@ -17,12 +17,14 @@ def create_image(
     description: str,
     metadata: dict[str, Any],
     annotations: dict[str, Any] | None = None,
+    ai_raw_response: str | None = None,
 ) -> Image:
     row = Image(
         file_path=file_path,
         description=description,
         meta=metadata,
         annotations=annotations if annotations is not None else {},
+        ai_raw_response=ai_raw_response,
     )
     session.add(row)
     session.flush()

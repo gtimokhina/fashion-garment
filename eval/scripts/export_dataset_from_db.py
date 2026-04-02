@@ -35,6 +35,7 @@ from sqlalchemy import select  # noqa: E402
 
 from models.database import SessionLocal  # noqa: E402
 from models.image import Image  # noqa: E402
+from services.metadata_fields import meta_field_value  # noqa: E402
 
 
 def _safe_filename(image_id: int, file_path: str) -> str:
@@ -47,19 +48,15 @@ def _safe_filename(image_id: int, file_path: str) -> str:
     return f"db_{image_id}_{stem_clean}{suffix}"
 
 
-def _meta_str(meta: dict, key: str) -> str:
-    v = meta.get(key) if isinstance(meta, dict) else None
-    if v is None:
-        return ""
-    return str(v).strip()
-
-
 def labels_from_row(meta: dict) -> dict[str, str]:
+    def g(key: str) -> str:
+        return meta_field_value(meta.get(key)) if isinstance(meta, dict) else ""
+
     return {
-        "garment_type": _meta_str(meta, "garment_type"),
-        "style": _meta_str(meta, "style"),
-        "occasion": _meta_str(meta, "occasion"),
-        "color": _meta_str(meta, "color_palette"),
+        "garment_type": g("garment_type"),
+        "style": g("style"),
+        "occasion": g("occasion"),
+        "color": g("color_palette"),
     }
 
 

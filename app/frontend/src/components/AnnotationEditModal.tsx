@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getApiBase } from "@/lib/api";
-import { getDesignerNotes, getDesignerTags } from "@/lib/annotations";
+import { getDesignerName, getDesignerNotes, getDesignerTags } from "@/lib/annotations";
 
 export type AnnotatedItem = {
   id: number;
@@ -22,6 +22,7 @@ export function AnnotationEditModal({
 }) {
   const [tagsText, setTagsText] = useState("");
   const [notes, setNotes] = useState("");
+  const [designerText, setDesignerText] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +30,7 @@ export function AnnotationEditModal({
     if (!image || !open) return;
     setTagsText(getDesignerTags(image.annotations).join(", "));
     setNotes(getDesignerNotes(image.annotations));
+    setDesignerText(getDesignerName(image.annotations));
     setError(null);
   }, [image, open]);
 
@@ -47,7 +49,7 @@ export function AnnotationEditModal({
       const res = await fetch(`${getApiBase()}/api/images/${image.id}/annotations`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tags, notes }),
+        body: JSON.stringify({ tags, notes, designer: designerText.trim() }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -78,7 +80,8 @@ export function AnnotationEditModal({
           Edit annotations
         </h2>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Your tags and notes are stored separately from AI metadata and included in search.
+          Tags, notes, and optional designer are stored separately from AI metadata and included in
+          search and filters.
         </p>
 
         <form onSubmit={onSubmit} className="mt-5 space-y-4">
@@ -106,6 +109,18 @@ export function AnnotationEditModal({
               rows={4}
               placeholder="Private observations, sourcing context…"
               className="mt-1 w-full resize-y rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+            />
+          </div>
+          <div>
+            <label htmlFor="designer" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+              Designer / brand
+            </label>
+            <input
+              id="designer"
+              value={designerText}
+              onChange={(e) => setDesignerText(e.target.value)}
+              placeholder="e.g. for curation when not in AI metadata"
+              className="mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
             />
           </div>
 

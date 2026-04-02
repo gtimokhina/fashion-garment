@@ -29,6 +29,7 @@ def init_db() -> None:
 
     Base.metadata.create_all(bind=engine)
     _migrate_sqlite_description_embedding()
+    _migrate_sqlite_ai_raw_response()
 
 
 def _migrate_sqlite_description_embedding() -> None:
@@ -43,6 +44,21 @@ def _migrate_sqlite_description_embedding() -> None:
         return
     with engine.connect() as conn:
         conn.execute(text("ALTER TABLE image ADD COLUMN description_embedding JSON"))
+        conn.commit()
+
+
+def _migrate_sqlite_ai_raw_response() -> None:
+    """Add ai_raw_response column to existing SQLite DBs (create_all does not alter tables)."""
+    if not get_database_url().startswith("sqlite"):
+        return
+    insp = inspect(engine)
+    if "image" not in insp.get_table_names():
+        return
+    cols = {c["name"] for c in insp.get_columns("image")}
+    if "ai_raw_response" in cols:
+        return
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE image ADD COLUMN ai_raw_response TEXT"))
         conn.commit()
 
 

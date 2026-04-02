@@ -102,11 +102,12 @@ On macOS, `python` is often missing — use `python3` (or activate a venv that p
 
 ```bash
 python3 eval/scripts/ingest_pexels_to_backend.py
+python3 eval/scripts/ingest_pexels_to_backend.py --sync-annotations   # same, then tags/notes from description (OpenAI)
 ```
 
 If you see “connection refused”, the API is not running on the default URL yet.
 
-This POSTs each `pexels_*` file to `/api/images/upload` (AI classification only). Add **`--tags "a,b"`** and/or **`--notes "..."`** only if you want designer metadata on those rows; omit both to avoid placeholder annotations. Use `--dry-run` to list files only. `BACKEND_URL` or `--base-url` if the API is not on `http://127.0.0.1:8000`.
+This POSTs each `pexels_*` file to `/api/images/upload` (AI classification only). **`--sync-annotations`** runs `app/backend/scripts/sync_annotations_from_description.py` afterward (use the same `python3`/venv as the backend so dependencies match). Add **`--tags "a,b"`** and/or **`--notes "..."`** only if you want designer metadata on those rows; omit both to avoid placeholder annotations. Use `--dry-run` to list files only. `BACKEND_URL` or `--base-url` if the API is not on `http://127.0.0.1:8000`.
 
 **Clear all designer annotations in SQLite** (does not touch AI description/metadata):
 

@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { getApiBase } from "@/lib/api";
-import { getDesignerNotes, getDesignerTags } from "@/lib/annotations";
+import { getDesignerName, getDesignerNotes, getDesignerTags } from "@/lib/annotations";
 import { AnnotationEditModal } from "@/components/AnnotationEditModal";
 import { Spinner } from "@/components/Spinner";
 
@@ -31,9 +31,48 @@ type FacetOption = { value: string; count: number };
 type Facets = {
   garment_types: FacetOption[];
   styles: FacetOption[];
-  occasions: FacetOption[];
+  materials: FacetOption[];
   color_palettes: FacetOption[];
+  patterns: FacetOption[];
+  seasons: FacetOption[];
+  occasions: FacetOption[];
+  consumer_profiles: FacetOption[];
+  trend_notes: FacetOption[];
+  location_contexts: FacetOption[];
 };
+
+/** Query param names (must match backend ``META_FILTER_KEYS``). */
+const FILTER_PARAM_KEYS = [
+  "garment_type",
+  "style",
+  "material",
+  "color_palette",
+  "pattern",
+  "season",
+  "occasion",
+  "consumer_profile",
+  "trend_notes",
+  "location_context",
+] as const;
+
+type FilterParamKey = (typeof FILTER_PARAM_KEYS)[number];
+
+const FACET_OPTIONS_KEY: Record<FilterParamKey, keyof Facets> = {
+  garment_type: "garment_types",
+  style: "styles",
+  material: "materials",
+  color_palette: "color_palettes",
+  pattern: "patterns",
+  season: "seasons",
+  occasion: "occasions",
+  consumer_profile: "consumer_profiles",
+  trend_notes: "trend_notes",
+  location_context: "location_contexts",
+};
+
+function emptyFilters(): Record<FilterParamKey, string> {
+  return Object.fromEntries(FILTER_PARAM_KEYS.map((k) => [k, ""])) as Record<FilterParamKey, string>;
+}
 
 /** Mirrors backend ``metadata_fields.heuristic_confidence_for_value`` for legacy rows. */
 const UNCERTAINTY_HINTS =
@@ -75,6 +114,12 @@ const AI_META_ORDER = [
   "consumer_profile",
   "trend_notes",
   "location_context",
+  "location_continent",
+  "location_country",
+  "location_city",
+  "time_year",
+  "time_month",
+  "designer",
 ] as const;
 
 const AI_META_LABELS: Record<(typeof AI_META_ORDER)[number], string> = {
@@ -87,7 +132,13 @@ const AI_META_LABELS: Record<(typeof AI_META_ORDER)[number], string> = {
   occasion: "Occasion",
   consumer_profile: "Consumer profile",
   trend_notes: "Trend notes",
-  location_context: "Location",
+  location_context: "Location (scene)",
+  location_continent: "Continent",
+  location_country: "Country",
+  location_city: "City",
+  time_year: "Year",
+  time_month: "Month",
+  designer: "Designer / brand",
 };
 
 function altFromDescription(text: string, max = 100): string {
@@ -96,36 +147,24 @@ function altFromDescription(text: string, max = 100): string {
   return t.length <= max ? t : `${t.slice(0, max).trim()}…`;
 }
 
-function buildImagesQuery(params: {
-  garment_type: string;
-  style: string;
-  occasion: string;
-  color_palette: string;
-  q: string;
-  semantic: boolean;
-}): string {
+function buildImagesQuery(filters: Record<FilterParamKey, string>, q: string, semantic: boolean): string {
   const p = new URLSearchParams();
-  if (params.garment_type) p.set("garment_type", params.garment_type);
-  if (params.style) p.set("style", params.style);
-  if (params.occasion) p.set("occasion", params.occasion);
-  if (params.color_palette) p.set("color_palette", params.color_palette);
-  if (params.q) p.set("q", params.q);
-  if (params.semantic) p.set("semantic", "1");
+  for (const key of FILTER_PARAM_KEYS) {
+    const v = filters[key]?.trim();
+    if (v) p.set(key, v);
+  }
+  if (q) p.set("q", q);
+  if (semantic) p.set("semantic", "1");
   const qs = p.toString();
   return qs ? `?${qs}` : "";
 }
 
-function buildFacetsQuery(params: {
-  garment_type: string;
-  style: string;
-  occasion: string;
-  color_palette: string;
-}): string {
+function buildFacetsQuery(filters: Record<FilterParamKey, string>): string {
   const p = new URLSearchParams();
-  if (params.garment_type) p.set("garment_type", params.garment_type);
-  if (params.style) p.set("style", params.style);
-  if (params.occasion) p.set("occasion", params.occasion);
-  if (params.color_palette) p.set("color_palette", params.color_palette);
+  for (const key of FILTER_PARAM_KEYS) {
+    const v = filters[key]?.trim();
+    if (v) p.set(key, v);
+  }
   const qs = p.toString();
   return qs ? `?${qs}` : "";
 }
@@ -137,10 +176,7 @@ export default function GalleryPage() {
   const [imagesError, setImagesError] = useState<string | null>(null);
   const [facetsError, setFacetsError] = useState<string | null>(null);
 
-  const [garmentType, setGarmentType] = useState("");
-  const [style, setStyle] = useState("");
-  const [occasion, setOccasion] = useState("");
-  const [colorPalette, setColorPalette] = useState("");
+  const [filters, setFilters] = useState<Record<FilterParamKey, string>>(emptyFilters);
   const [searchInput, setSearchInput] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [semanticSearch, setSemanticSearch] = useState(false);
@@ -152,28 +188,14 @@ export default function GalleryPage() {
   }, [searchInput]);
 
   const loadFacets = useCallback(async () => {
-    const res = await fetch(
-      `${getApiBase()}/api/images/facets${buildFacetsQuery({
-        garment_type: garmentType,
-        style,
-        occasion,
-        color_palette: colorPalette,
-      })}`,
-    );
+    const res = await fetch(`${getApiBase()}/api/images/facets${buildFacetsQuery(filters)}`);
     if (!res.ok) throw new Error("Failed to load filters");
     return res.json() as Promise<Facets>;
-  }, [garmentType, style, occasion, colorPalette]);
+  }, [filters]);
 
   const loadImages = useCallback(
-    async (q: {
-      garment_type: string;
-      style: string;
-      occasion: string;
-      color_palette: string;
-      q: string;
-      semantic: boolean;
-    }) => {
-      const res = await fetch(`${getApiBase()}/api/images${buildImagesQuery(q)}`);
+    async (f: Record<FilterParamKey, string>, q: string, semantic: boolean) => {
+      const res = await fetch(`${getApiBase()}/api/images${buildImagesQuery(f, q, semantic)}`);
       if (!res.ok) throw new Error(res.statusText);
       return res.json() as Promise<{
         items: ImageItem[];
@@ -203,14 +225,7 @@ export default function GalleryPage() {
 
   useEffect(() => {
     let cancelled = false;
-    loadImages({
-      garment_type: garmentType,
-      style,
-      occasion,
-      color_palette: colorPalette,
-      q: debouncedQ,
-      semantic: semanticSearch,
-    })
+    loadImages(filters, debouncedQ, semanticSearch)
       .then((data) => {
         if (!cancelled) {
           setItems(data.items);
@@ -225,21 +240,24 @@ export default function GalleryPage() {
     return () => {
       cancelled = true;
     };
-  }, [loadImages, garmentType, style, occasion, colorPalette, debouncedQ, semanticSearch]);
+  }, [loadImages, filters, debouncedQ, semanticSearch]);
+
+  function setFilter(key: FilterParamKey, value: string) {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  }
 
   function clearFilters() {
-    setGarmentType("");
-    setStyle("");
-    setOccasion("");
-    setColorPalette("");
+    setFilters(emptyFilters());
     setSearchInput("");
     setDebouncedQ("");
     setSemanticSearch(false);
     setKeywordFallback(false);
   }
 
-  const filtersActive =
-    Boolean(garmentType || style || occasion || colorPalette || debouncedQ || semanticSearch);
+  const filtersActive = useMemo(() => {
+    const meta = FILTER_PARAM_KEYS.some((k) => filters[k]?.trim());
+    return meta || debouncedQ.trim() !== "" || semanticSearch;
+  }, [filters, debouncedQ, semanticSearch]);
 
   function onAnnotationSaved(row: ImageItem) {
     setItems((prev) =>
@@ -261,15 +279,15 @@ export default function GalleryPage() {
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl flex-col gap-8 px-6 py-10 lg:flex-row">
-      <aside className="w-full shrink-0 space-y-6 lg:sticky lg:top-6 lg:w-72 lg:self-start">
+      <aside className="w-full shrink-0 space-y-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-5rem)] lg:w-[22rem] lg:overflow-y-auto lg:self-start xl:w-96">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
             Gallery
           </h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            Filter by AI metadata. With <strong>Semantic search</strong>, results are ranked by a{" "}
-            <strong>hybrid score</strong> (50% keyword overlap + 50% description embedding similarity;
-            see Score % on cards).
+            Filter by AI attributes. With <strong>Semantic search</strong>,
+            results are ranked by a <strong>hybrid score</strong> (50% keyword overlap + 50% description
+            embedding similarity; see Score % on cards).
           </p>
         </div>
 
@@ -303,35 +321,88 @@ export default function GalleryPage() {
             <p className="text-xs text-amber-700 dark:text-amber-400">{facetsError}</p>
           ) : null}
 
-          <FilterSelect
-            label="Garment type"
-            value={garmentType}
-            onChange={setGarmentType}
-            options={facets?.garment_types ?? []}
-            disabled={!facets}
-          />
-          <FilterSelect
-            label="Style"
-            value={style}
-            onChange={setStyle}
-            options={facets?.styles ?? []}
-            disabled={!facets}
-          />
-          <FilterSelect
-            label="Occasion"
-            value={occasion}
-            onChange={setOccasion}
-            options={facets?.occasions ?? []}
-            disabled={!facets}
-          />
-          <FilterSelect
-            label="Color palette"
-            value={colorPalette}
-            onChange={setColorPalette}
-            options={facets?.color_palettes ?? []}
-            disabled={!facets}
-            hint="Match inside stored palette text."
-          />
+          <FilterSection title="Garment">
+            <FilterSelect
+              label="Garment type"
+              value={filters.garment_type}
+              onChange={(v) => setFilter("garment_type", v)}
+              options={facets?.garment_types ?? []}
+              disabled={!facets}
+            />
+            <FilterSelect
+              label="Material"
+              value={filters.material}
+              onChange={(v) => setFilter("material", v)}
+              options={facets?.materials ?? []}
+              disabled={!facets}
+            />
+            <FilterSelect
+              label="Pattern"
+              value={filters.pattern}
+              onChange={(v) => setFilter("pattern", v)}
+              options={facets?.patterns ?? []}
+              disabled={!facets}
+            />
+            <FilterSelect
+              label="Color palette"
+              value={filters.color_palette}
+              onChange={(v) => setFilter("color_palette", v)}
+              options={facets?.color_palettes ?? []}
+              disabled={!facets}
+              hint="Substring match on stored palette text."
+            />
+          </FilterSection>
+
+          <FilterSection title="Style & audience">
+            <FilterSelect
+              label="Style"
+              value={filters.style}
+              onChange={(v) => setFilter("style", v)}
+              options={facets?.styles ?? []}
+              disabled={!facets}
+            />
+            <FilterSelect
+              label="Occasion"
+              value={filters.occasion}
+              onChange={(v) => setFilter("occasion", v)}
+              options={facets?.occasions ?? []}
+              disabled={!facets}
+            />
+            <FilterSelect
+              label="Consumer profile"
+              value={filters.consumer_profile}
+              onChange={(v) => setFilter("consumer_profile", v)}
+              options={facets?.consumer_profiles ?? []}
+              disabled={!facets}
+            />
+            <FilterSelect
+              label="Trend notes"
+              value={filters.trend_notes}
+              onChange={(v) => setFilter("trend_notes", v)}
+              options={facets?.trend_notes ?? []}
+              disabled={!facets}
+            />
+          </FilterSection>
+
+          <FilterSection title="Location">
+            <FilterSelect
+              label="Scene / context"
+              value={filters.location_context}
+              onChange={(v) => setFilter("location_context", v)}
+              options={facets?.location_contexts ?? []}
+              disabled={!facets}
+            />
+          </FilterSection>
+
+          <FilterSection title="Time">
+            <FilterSelect
+              label="Season"
+              value={filters.season}
+              onChange={(v) => setFilter("season", v)}
+              options={facets?.seasons ?? []}
+              disabled={!facets}
+            />
+          </FilterSection>
 
           <button
             type="button"
@@ -660,7 +731,8 @@ function DescriptionBlock({ description }: { description: string }) {
 function DesignerAnnotationsBlock({ annotations }: { annotations: Record<string, unknown> }) {
   const tags = getDesignerTags(annotations);
   const notes = getDesignerNotes(annotations);
-  const has = tags.length > 0 || notes.trim().length > 0;
+  const designer = getDesignerName(annotations);
+  const has = tags.length > 0 || notes.trim().length > 0 || designer.length > 0;
   return (
     <div
       className={`rounded-xl border p-3 ${has ? "border-amber-200/90 bg-amber-50/60 dark:border-amber-900/60 dark:bg-amber-950/25" : "border-dashed border-zinc-200 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-900/40"}`}
@@ -669,9 +741,16 @@ function DesignerAnnotationsBlock({ annotations }: { annotations: Record<string,
         Annotations
       </p>
       {!has ? (
-        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">None yet — use Edit to add tags or notes.</p>
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">
+          None yet — use Edit to add tags, notes, or designer.
+        </p>
       ) : (
         <>
+          {designer ? (
+            <p className="mt-1 text-xs font-medium text-amber-950 dark:text-amber-100/95">
+              Designer: {designer}
+            </p>
+          ) : null}
           {tags.length > 0 ? (
             <ul className="mt-2 flex flex-wrap gap-1.5">
               {tags.map((t, i) => (
@@ -689,6 +768,17 @@ function DesignerAnnotationsBlock({ annotations }: { annotations: Record<string,
           ) : null}
         </>
       )}
+    </div>
+  );
+}
+
+function FilterSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
+        {title}
+      </p>
+      <div className="space-y-3">{children}</div>
     </div>
   );
 }

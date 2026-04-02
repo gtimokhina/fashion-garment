@@ -14,9 +14,6 @@ export function Nav() {
           <Link href="/upload" className={link}>
             Upload
           </Link>
-          <Link href="/gallery" className={link}>
-            Gallery
-          </Link>
         </div>
       </nav>
     </header>
