@@ -1,48 +1,68 @@
-# Fashion Garment Classification & Inspiration Web App
+# Fashion Garment — Inspiration Library & Vision Classifier
 
-Lightweight AI-powered web app for fashion designers to organize, search, and reuse inspiration imagery from the field.
+A small full-stack app for **fashion and retail teams** to collect inspiration images, run **GPT‑4o (vision)** classification into structured attributes, add **designer annotations**, and **search** with lexical filters, optional **semantic / hybrid** ranking, and **faceted** counts.
 
-## Overview
+---
 
-Design teams collect large numbers of inspiration photos; this project explores turning that library into a searchable, annotated resource with AI-assisted garment classification and designer-added metadata.
+## Project overview
 
-**Designer annotations** (tags and free-text notes) are stored separately from **AI-generated** descriptions and structured metadata. Search matches both, but the gallery labels them distinctly (amber “Your annotations” vs blue “Description”) so you can tell what came from the model versus human input.
+- **Problem:** Reference photos pile up in folders or chat threads; designers need quick recall by garment, palette, occasion, and their own tags—not only filenames.
+- **Approach:** Upload images through a web UI or API; each image gets a model-written **description**, JSON **metadata** (garment type, style, colors, occasion, etc., each with a **confidence**), and separate **annotations** (tags, notes, optional designer string). The gallery exposes filters, search, and optional embedding-backed ranking.
+- **Scope:** Single-user / small-team prototype: one SQLite database, local file storage, OpenAI for vision and embeddings. Not a multi-tenant production CDN.
 
-## Stack
+---
 
-| Layer | Technology |
-|--------|------------|
-| Frontend | Next.js (App Router, TypeScript, Tailwind) in [`app/frontend`](app/frontend) |
-| Backend | FastAPI + SQLAlchemy + SQLite in [`app/backend`](app/backend) (`main.py`, `routes/`, `services/`, `models/`) |
-| Database | SQLite file under `app/backend/data/` (created on first run) |
+## Architecture
 
-## Prerequisites
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Browser                                                                 │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │ HTTP (pages, JS)
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Next.js (App Router) — app/frontend                                     │
+│  · Gallery, upload UI · NEXT_PUBLIC_API_URL → FastAPI                    │
+└───────────────────────────────┬─────────────────────────────────────────┘
+                                │ JSON, multipart upload
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│  FastAPI — app/backend                                                   │
+│  · /api/images*, /health  · StaticFiles: /uploads/                       │
+│  · Routes → services (classifier, filters, embeddings, CRUD)             │
+└───────┬─────────────────────┬─────────────────────┬─────────────────────┘
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌───────────────┐    ┌────────────────┐    ┌──────────────────┐
+│ SQLite        │    │ Local disk      │    │ OpenAI API        │
+│ (metadata +   │    │ uploads/        │    │ vision classify + │
+│  embeddings)  │    │                 │    │ text embeddings   │
+└───────────────┘    └────────────────┘    └──────────────────┘
+```
 
-- **Node.js** 20+ (for Next.js)
-- **Python** 3.11+ (for FastAPI)
+**Data flow (upload):** multipart file → save under `uploads/` → `classify_image` (vision JSON) → normalize → optional description embedding → persist `Image` row.
 
-## Local setup
+**Data flow (search):** query params → SQL JSON substring filters and/or hybrid `0.5×keyword + 0.5×cosine(description_embedding)` when `semantic=true` with text query.
 
-### 1. Backend (FastAPI)
+---
+
+## Setup
+
+**Prerequisites:** Node.js 20+, Python 3.9+ (3.11+ recommended), an [OpenAI](https://platform.openai.com/) API key.
+
+### Backend
 
 ```bash
 cd app/backend
-python3 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env   # set OPENAI_API_KEY, optional OPENAI_MODEL, DATABASE_URL, CORS_ORIGINS
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)  
-Health check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
+Interactive API: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
-**Images:** `GET /api/images` with optional filters (substring, case-insensitive): `garment_type`, `style`, `occasion`, `color_palette`, `color` (alias for palette text), `q` or `search` (matches **description**, annotation **notes**, and **tags**). **`semantic=true`** with non-empty `q`/`search` (default **`hybrid=true`**): **combined score** = `0.5 × keyword_score + 0.5 × embedding_similarity` (keyword = substring match in desc/notes/tags, 0 or 1; embedding = cosine on stored description vectors). Rows below **`HYBRID_MIN_COMBINED_SCORE`** are dropped; response includes **`keyword_score`**, **`semantic_score`**, **`combined_score`** per item. **`hybrid=false`**: legacy embedding-only ranking (`SEMANTIC_SEARCH_*` thresholds). **`keyword_fallback`**: substring-only SQL results if no rows pass. **Facets:** `GET /api/images/facets`. **Upload:** `POST /api/images/upload` with multipart field **`files`** repeated (one or more images); response `{ "items": [...], "errors": [{ "filename", "detail" }] }` (per-file classification; partial success possible). **Annotations:** `PATCH /api/images/{id}/annotations` with JSON `{ "tags": ["a"], "notes": "..." }` (omit a field to leave it unchanged). Existing rows without embeddings: `python3 scripts/backfill_description_embeddings.py` from `app/backend`.
-
-Optional: copy [`app/backend/.env.example`](app/backend/.env.example) to `app/backend/.env` and set `DATABASE_URL` or comma-separated `CORS_ORIGINS`.
-
-### 2. Frontend (Next.js)
-
-In a **second** terminal:
+### Frontend
 
 ```bash
 cd app/frontend
@@ -51,88 +71,117 @@ cp .env.example .env.local   # optional; defaults to http://127.0.0.1:8000
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Use **Upload** and **Gallery** in the nav. The home page includes an **API status** panel that calls `/health` (start the backend first, or you will see “unreachable”).
+Open [http://localhost:3000](http://localhost:3000).
 
-Dependencies: install with **`pip install -r requirements.txt`** or, if you use Poetry, **`poetry install`** from `app/backend` (see [`pyproject.toml`](app/backend/pyproject.toml)).
-
-### Environment
-
-- **Frontend:** `NEXT_PUBLIC_API_URL` in `.env.local` (see [`app/frontend/.env.example`](app/frontend/.env.example)) points at the FastAPI server.
-- **Backend:** CORS allows `localhost:3000` and `127.0.0.1:3000` by default.
-- **OpenAI (classification):** set `OPENAI_API_KEY` (and optional `OPENAI_MODEL`) in the environment or in [`app/backend/.env`](app/backend/.env) — loaded automatically on startup via `python-dotenv`. See [`app/backend/.env.example`](app/backend/.env.example).
-
-## Repository layout
-
-| Path | Purpose |
-|------|---------|
-| `app/frontend/` | Next.js UI. |
-| `app/backend/` | FastAPI (`main.py`, `routes/`, `services/`, `models/`), SQLite under `data/`, uploads under `uploads/`. |
-| `eval/` | Model evaluation scripts and labeled test set (50–100 images, gold attributes). |
-| `tests/` | Unit, integration, and end-to-end tests. |
-| `tests/unit/` | Unit tests. |
-| `tests/integration/` | Integration tests. |
-| `tests/e2e/` | End-to-end tests. |
-
-**Run backend tests** (from repo root; needs backend deps plus `app/backend/requirements-dev.txt`):
+### Tests
 
 ```bash
 pip install -r app/backend/requirements.txt -r app/backend/requirements-dev.txt
 pytest
 ```
 
-## Architecture
+---
 
-The browser talks only to **Next.js** for pages and static assets. Client-side `fetch` uses `NEXT_PUBLIC_API_URL` to reach **FastAPI** (JSON, uploads, and future search endpoints). **SQLite** is opened exclusively from the Python process via **SQLAlchemy** (`models/database.py`, `Image` ORM). Upload runs **GPT-4o** classification and persists `description`, `metadata` (structured attributes), and `annotations` (JSON, initially `{}`).
+## API endpoints
 
-## Evaluation
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/health` | Liveness JSON `{"status":"ok"}`. |
+| `GET` | `/api/images` | List images. **Metadata filters** (case-insensitive substring on structured fields): `garment_type`, `style`, `material`, `color` / `color_palette`, `pattern`, `season`, `occasion`, `consumer_profile`, `trend_notes`, `location_context`. **`q` / `search`:** description + annotation notes + tags. **`semantic=true`** + non-empty query: embedding ranking; default **`hybrid=true`** combines keyword (0/1) and embedding cosine; response may include `semantic_score`, `keyword_score`, `combined_score`, `keyword_fallback`. |
+| `GET` | `/api/images/facets` | Facet value counts (same filter dimensions; standard faceted behavior). |
+| `POST` | `/api/images/upload` | Multipart **`files`** (repeat field); per-file classify and persist; returns `items` + `errors`. |
+| `GET` | `/api/images/{id}` | Single image payload. |
+| `PATCH` | `/api/images/{id}` | Update `description`, `metadata`, and/or `annotations` (JSON body). |
+| `PATCH` | `/api/images/{id}/annotations` | Merge **tags**, **notes**, **designer**; omitted keys unchanged. |
+| `DELETE` | `/api/images/{id}` | Remove row and delete file under `uploads/`. |
 
-See **[`eval/README.md`](eval/README.md)** for the full pipeline. **Classifier eval** (gold labels vs model output for `garment_type`, `style`, `occasion`, `color`):
+Static assets: **`GET /uploads/...`** served from `app/backend/uploads/`.
+
+---
+
+## Design decisions
+
+1. **Split AI output vs designer input:** `metadata` holds model attributes (+ confidences); `annotations` holds human tags/notes/designer so UX and search can distinguish “model vs you” without schema collisions.
+2. **SQLite + JSON columns:** Fast to ship, easy backup, sufficient for a local library; metadata stored as JSON matching the vision schema (`value` + `confidence` per field).
+3. **Substring filters first:** Predictable for small corpora; **semantic/hybrid** layered on for “vibe” queries without abandoning SQL filters.
+4. **OpenAI JSON mode + Pydantic:** Typed parsing with a repair pass on failure reduces brittle regex on raw model text.
+5. **Eval outside the request path:** `eval/run_eval.py` re-runs classification against labeled sets; optional **LLM judge** separates *string-match* accuracy from *semantic* agreement.
+
+---
+
+## Trade-offs
+
+| Choice | Upside | Downside |
+|--------|--------|----------|
+| SQLite | Zero ops, portable | Concurrent writes weak; not ideal for high fan-out APIs |
+| File-backed uploads | Simple, works with StaticFiles | No S3 lifecycle, CDN, or virus pipeline |
+| Single multimodal call per upload | Low latency vs multi-step pipelines | One prompt carries all fields; harder field-level tuning |
+| Hybrid search | Blends exact-ish keywords with semantic recall | Tuning thresholds (`HYBRID_*`, `SEMANTIC_*`) is environment-specific |
+| Storing raw model JSON (`ai_raw_response`) | Debuggability | Larger rows; privacy/storage discipline needed |
+
+---
+
+## Limitations
+
+- **No auth:** Anyone with network access to the API can read/write (add reverse proxy + auth for shared hosts).
+- **English-centric prompts** and Western-biased training data in base models may skew labels for global street style.
+- **Gold labels in eval** are only as good as export/annotation quality; DB-exported labels can match an *earlier* model run (consistency check), not absolute truth.
+- **Embeddings** require OpenAI; offline/air-gapped use needs a different embedder and code path.
+- **Classifier cost & rate limits** scale linearly with uploads; bulk ingest (e.g. Pexels scripts) should be run deliberately.
+
+---
+
+## Evaluation results summary
+
+**Pinned snapshot (2026-03-31):** `gpt-4o` on **`eval/data/example_dataset`** (**N = 53** images, gold labels from stored metadata). Matching: `--color-mode token`, `--text-match exact`, no LLM judge. *Your* run may differ slightly if `OPENAI_MODEL` or prompts differ.
+
+| Field | Accuracy |
+|-------|----------|
+| `garment_type` | 26.4% |
+| `style` | 45.3% |
+| `occasion` | 77.4% |
+| `color` (vs `color_palette`) | 37.7% |
+| **Micro** (all 212 field slots) | **46.7%** |
+| **Macro** (mean of four fields) | **46.7%** |
+
+**Takeaway:** strongest on **occasion**, weakest on **garment_type** under strict string rules—often partly **vocabulary** (e.g. gold “joggers” vs “streetwear ensemble”) rather than pure vision error; see optional `--llm-judge` in [`eval/README.md`](eval/README.md).
+
+**Artifacts:** aggregates in [`eval/results/snapshot_manifest.json`](eval/results/snapshot_manifest.json); full per-image rows in [`eval/results/eval_snapshot_gpt4o.json`](eval/results/eval_snapshot_gpt4o.json); see [`eval/results/README.md`](eval/results/README.md).
+
+**How to run / refresh:** [`eval/README.md`](eval/README.md), [`eval/data/example_dataset/README.md`](eval/data/example_dataset/README.md).
 
 ```bash
-cd app/backend && source .venv/bin/activate   # optional
-python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset
+cd app/backend && source .venv/bin/activate
+pip install -r requirements.txt
+python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset --output-json ../../eval/results/eval_snapshot_gpt4o.json
 ```
 
-Dataset format: [`eval/data/example_dataset/README.md`](eval/data/example_dataset/README.md) and [`labels.example.json`](eval/data/example_dataset/labels.example.json). **Export from DB** (images + labels from stored metadata): `python3 eval/scripts/export_dataset_from_db.py` from `app/backend`, or from repo root: `bash eval/run_example_eval.sh` (export + eval in one step).
+**Bulk imagery:** official Pexels API (`PEXELS_API_KEY`): `eval/scripts/download_pexels_fashion.py`, then `eval/scripts/ingest_pexels_to_backend.py` (optional `--sync-annotations`) — [`eval/README.md`](eval/README.md).
 
-Requires `OPENAI_*` in `app/backend/.env`. Use `--verbose` for per-image tables, `--output-json path` for machine-readable results, `--text-match token` if gold strings use comma-separated multi-labels for text fields, and **`--llm-judge text`** (or **`vision`**) for an optional second LLM that scores semantic agreement with gold labels (see `eval/README.md`).
+---
 
-**Bulk fashion images (Pexels):** use the official API (not the search webpage). Get a free key at [pexels.com/api](https://www.pexels.com/api/), add `PEXELS_API_KEY=...` to `app/backend/.env` (same file as the backend), then:
+## Repository layout
 
-```bash
-python3 eval/scripts/download_pexels_fashion.py   # 50 × "fashion" → eval/data/pexels_fashion/
-```
+| Path | Role |
+|------|------|
+| [`app/frontend/`](app/frontend/) | Next.js UI (gallery, upload). |
+| [`app/backend/`](app/backend/) | FastAPI app, SQLAlchemy models, classifier, search, scripts. |
+| [`eval/`](eval/README.md) | Offline classifier evaluation, optional LLM judge, Pexels helpers. |
+| [`eval/results/`](eval/results/README.md) | Pinned eval JSON + manifest for README baselines. |
+| [`tests/`](tests/) | Pytest: unit (JSON parse), integration (filters), e2e (mocked classify + upload). |
 
-On macOS, `python` is often missing — use `python3` (or activate a venv that provides `python`). You can also `export PEXELS_API_KEY=...` to override. Options: `--count 50`, `--query fashion`, `--out path`.
+---
 
-**Ingest downloads into the app** (same pipeline as the Upload page: save → classify → DB). In a separate terminal, start the backend (`uvicorn` with `OPENAI_*` set — see Backend above), then:
+## Additional scripts (backend)
 
-```bash
-python3 eval/scripts/ingest_pexels_to_backend.py
-python3 eval/scripts/ingest_pexels_to_backend.py --sync-annotations   # same, then tags/notes from description (OpenAI)
-```
+| Script | Use |
+|--------|-----|
+| `scripts/backfill_description_embeddings.py` | Fill missing vectors for semantic search. |
+| `scripts/sync_annotations_from_description.py` | Suggest tags/notes from description + metadata (preserves **`designer`** unless `--merge` semantics apply). |
+| `scripts/clear_all_annotations.py` | Clear designer annotations only. |
 
-If you see “connection refused”, the API is not running on the default URL yet.
+---
 
-This POSTs each `pexels_*` file to `/api/images/upload` (AI classification only). **`--sync-annotations`** runs `app/backend/scripts/sync_annotations_from_description.py` afterward (use the same `python3`/venv as the backend so dependencies match). Add **`--tags "a,b"`** and/or **`--notes "..."`** only if you want designer metadata on those rows; omit both to avoid placeholder annotations. Use `--dry-run` to list files only. `BACKEND_URL` or `--base-url` if the API is not on `http://127.0.0.1:8000`.
+## License / contributing
 
-**Clear all designer annotations in SQLite** (does not touch AI description/metadata):
-
-```bash
-cd app/backend && python3 scripts/clear_all_annotations.py
-```
-
-**Fill tags and notes from the stored AI description** (plus structured metadata): uses the same OpenAI model to suggest searchable tags—including synonyms grounded in the description—and a short notes line. Replaces existing annotations by default; add `--merge` to union tags and append notes.
-
-```bash
-cd app/backend && python3 scripts/sync_annotations_from_description.py --dry-run
-python3 scripts/sync_annotations_from_description.py
-```
-
-## Testing
-
-Commands will be added once pytest / frontend test runner are wired. Planned coverage:
-
-- Unit: parsing multimodal model output into structured attributes.
-- Integration: filter behavior (especially location and time).
-- End-to-end: upload, classify, and filter.
+Treat API keys and local SQLite/uploads as secrets and artifacts; do not commit `.env` or production databases. Extend eval and thresholds in code when you change prompts or models so regressions stay visible.

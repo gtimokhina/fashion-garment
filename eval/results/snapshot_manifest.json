@@ -1,0 +1,21 @@
+{
+  "pinned_at": "2026-03-31",
+  "openai_model": "gpt-4o",
+  "openai_model_note": "Classifier default in code; run used OPENAI_MODEL from app/backend/.env if set.",
+  "dataset": "eval/data/example_dataset",
+  "items": 53,
+  "flags": {
+    "color_mode": "token",
+    "text_match": "exact",
+    "llm_judge": null
+  },
+  "micro_accuracy": 0.467,
+  "macro_accuracy": 0.467,
+  "per_field_accuracy": {
+    "garment_type": 0.264,
+    "style": 0.453,
+    "occasion": 0.774,
+    "color": 0.377
+  },
+  "full_json": "eval_snapshot_gpt4o.json"
+}

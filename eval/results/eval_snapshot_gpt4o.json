@@ -1,0 +1,1940 @@
+{
+  "dataset": "/Users/gulya/Documents/projects/fashion-garment/eval/data/example_dataset",
+  "color_mode": "token",
+  "text_match": "exact",
+  "labels_version": 1,
+  "judge_mode": null,
+  "per_field": {
+    "garment_type": {
+      "correct": 14,
+      "total": 53,
+      "accuracy": 0.2641509433962264
+    },
+    "style": {
+      "correct": 24,
+      "total": 53,
+      "accuracy": 0.4528301886792453
+    },
+    "occasion": {
+      "correct": 41,
+      "total": 53,
+      "accuracy": 0.7735849056603774
+    },
+    "color": {
+      "correct": 20,
+      "total": 53,
+      "accuracy": 0.37735849056603776
+    }
+  },
+  "micro_accuracy": 0.4669811320754717,
+  "macro_accuracy": 0.46698113207547176,
+  "failures_string": {
+    "garment_type": [
+      {
+        "image": "images/db_1_c38c8e7ca76049b49a5bb30adb56c8df.jpg",
+        "gold": "joggers",
+        "predicted": "streetwear ensemble"
+      },
+      {
+        "image": "images/db_2_184b5bd9e93046738ea0e0503ea82bb3.jpg",
+        "gold": "pink suit",
+        "predicted": "suit"
+      },
+      {
+        "image": "images/db_3_9b7f34bbbf94449d92b6f909d9a279f8.jpg",
+        "gold": "fitted dress",
+        "predicted": "black dress with slit, leather jacket with jeans"
+      },
+      {
+        "image": "images/db_4_2b9c5e0a437e4dc6abe8a39b6988d7e0.jpeg",
+        "gold": "coat",
+        "predicted": "trench coat"
+      },
+      {
+        "image": "images/db_8_9770cca8c8fe4cfbaf0bf667db33f90f.jpeg",
+        "gold": "oversized graphic t-shirt",
+        "predicted": "oversized t-shirt"
+      },
+      {
+        "image": "images/db_9_00cdb6f118ad48f0acc44bc7b114ddd9.jpeg",
+        "gold": "suit",
+        "predicted": "pantsuit"
+      },
+      {
+        "image": "images/db_11_f377d45539d2422c8afd5c32882f215e.jpeg",
+        "gold": "black dress",
+        "predicted": "sheer dress, leather jacket"
+      },
+      {
+        "image": "images/db_13_64fe706c03d248dd8e3c633299889d88.jpeg",
+        "gold": "maxi skirt",
+        "predicted": "long dress"
+      },
+      {
+        "image": "images/db_16_322d9c0f3ea24ddbb10d9c777d1f64c2.jpeg",
+        "gold": "white shirt",
+        "predicted": "structured shirt with embellishments"
+      },
+      {
+        "image": "images/db_17_b72b67bfa05f4d2197da7c67e708c4f6.jpeg",
+        "gold": "denim jacket",
+        "predicted": "streetwear"
+      },
+      {
+        "image": "images/db_18_55ad68d0622c41aebcca70c90185fa8b.jpeg",
+        "gold": "cargo jacket",
+        "predicted": "utility suit"
+      },
+      {
+        "image": "images/db_19_fe308a9212694d0a86cf0e29da9b28d3.jpeg",
+        "gold": "trench coat",
+        "predicted": "trench coat, blazer, denim jeans"
+      },
+      {
+        "image": "images/db_20_8e2d665d78df4bd2bb2f89a934257a8f.jpeg",
+        "gold": "plaid blazer",
+        "predicted": "blazer"
+      },
+      {
+        "image": "images/db_24_7838ba9445534a44a831bf18ab1d0873.jpeg",
+        "gold": "oversized blazer",
+        "predicted": "blazer and cropped top"
+      },
+      {
+        "image": "images/db_25_36b442a580b14b4ca44953c6486cffc2.jpeg",
+        "gold": "bomber jacket",
+        "predicted": "bomber jacket, hoodie, oversized shirt"
+      },
+      {
+        "image": "images/db_27_762a9f5d7be040b8aa3a62120111d28c.jpeg",
+        "gold": "denim jacket",
+        "predicted": "denim jackets and pants"
+      },
+      {
+        "image": "images/db_28_cf614f81f28240ee9dd97eac6785216e.jpeg",
+        "gold": "denim ensemble",
+        "predicted": "denim jacket"
+      },
+      {
+        "image": "images/db_29_d11d51b03ce040418ec4b661025e0023.jpeg",
+        "gold": "streetwear",
+        "predicted": "hoodie, plaid skirt, t-shirt, wide-leg jeans, jumpsuit"
+      },
+      {
+        "image": "images/db_30_e82dbecee4b54ad79dd34c9f63f4feb8.jpeg",
+        "gold": "jumpsuit",
+        "predicted": "casual wear"
+      },
+      {
+        "image": "images/db_31_fe950c6f9a41412f99a240ce046af89c.jpeg",
+        "gold": "hoodie, t-shirt, sweater, striped top, jumpsuit",
+        "predicted": "hoodie, t-shirt, sweater, striped shirt, jumpsuit"
+      },
+      {
+        "image": "images/db_32_dceecbeb8c8442559fef7a5d249981dc.jpeg",
+        "gold": "hoodie",
+        "predicted": "varied, including trench coat, PVC dress, hoodies"
+      },
+      {
+        "image": "images/db_33_47646931bd514b1fb835f888b5ac4f41.jpeg",
+        "gold": "casual streetwear",
+        "predicted": "streetwear mix"
+      },
+      {
+        "image": "images/db_34_9abf80b2e1fb46cc95e2ea8849bdf5c5.jpeg",
+        "gold": "colorful sweatshirt",
+        "predicted": "streetwear"
+      },
+      {
+        "image": "images/db_35_0afe0f2792b04214b247d4d37509e514.jpeg",
+        "gold": "hoodie",
+        "predicted": "streetwear layers"
+      },
+      {
+        "image": "images/db_36_f22d9d4527ca402dba08a61171744f28.jpeg",
+        "gold": "plaid shirt dress",
+        "predicted": "plaid dress, oversized shirt"
+      },
+      {
+        "image": "images/db_37_1897730f77824388b10c4b5e4a492069.jpeg",
+        "gold": "plaid top",
+        "predicted": "plaid shirt, denim skirt"
+      },
+      {
+        "image": "images/db_39_45efe3456e5949a2904f3cc0c1ccce63.jpeg",
+        "gold": "blazer",
+        "predicted": "outerwear"
+      },
+      {
+        "image": "images/db_40_290a04c7415f44ba9445b2e545bf1a50.jpeg",
+        "gold": "hoodie",
+        "predicted": "tie-dye sweater, sherpa vest, hoodie"
+      },
+      {
+        "image": "images/db_41_ba8dfea9c8a84b75b0c74646895ad696.jpeg",
+        "gold": "vest",
+        "predicted": "casual streetwear"
+      },
+      {
+        "image": "images/db_42_8cec31a39f154f3b81dfdeee530707d4.jpeg",
+        "gold": "sherpa vest",
+        "predicted": "denim jeans and printed long-sleeve shirt"
+      },
+      {
+        "image": "images/db_43_14948aa39afa473b9617c598fb1566ae.jpeg",
+        "gold": "sleeveless top",
+        "predicted": "blazer"
+      },
+      {
+        "image": "images/db_44_4b712af7b47247c880f615d8977f1105.jpeg",
+        "gold": "sweatpants",
+        "predicted": "joggers, crop top, oversized jacket"
+      },
+      {
+        "image": "images/db_45_0eb2ab5f23ae48ac963176f6f1b44224.jpeg",
+        "gold": "layered outerwear",
+        "predicted": "denim jacket, cargo pants, hooded jacket"
+      },
+      {
+        "image": "images/db_48_9e33fffef98c4064953a54d1df0954af.jpeg",
+        "gold": "structured white top",
+        "predicted": "oversized vest"
+      },
+      {
+        "image": "images/db_49_e388ce03b6da42af99e68a0d8dd952cc.jpeg",
+        "gold": "sequin skirt",
+        "predicted": "graphic tee, sequined skirt"
+      },
+      {
+        "image": "images/db_50_26fcbedead38479499ef394fd2a89623.jpeg",
+        "gold": "T-shirt",
+        "predicted": "graphic t-shirt, abstract shirt, strapless top"
+      },
+      {
+        "image": "images/db_51_b00e33952a2441fd9fb90b64a4c19e8b.jpeg",
+        "gold": "mesh top",
+        "predicted": "layered tops and skirts"
+      },
+      {
+        "image": "images/db_52_7d01f09e54014c3bbfbb6e6ba3e46963.jpeg",
+        "gold": "plaid suit",
+        "predicted": "suit, two-piece outfit"
+      },
+      {
+        "image": "images/db_53_8803e5f147094944bf7586c1fd6b9845.jpeg",
+        "gold": "vinyl coat",
+        "predicted": "printed shirt, glossy coat"
+      }
+    ],
+    "style": [
+      {
+        "image": "images/db_1_c38c8e7ca76049b49a5bb30adb56c8df.jpg",
+        "gold": "streetwear",
+        "predicted": "urban streetwear"
+      },
+      {
+        "image": "images/db_2_184b5bd9e93046738ea0e0503ea82bb3.jpg",
+        "gold": "contemporary",
+        "predicted": "modern"
+      },
+      {
+        "image": "images/db_3_9b7f34bbbf94449d92b6f909d9a279f8.jpg",
+        "gold": "modern, edgy",
+        "predicted": "streetwear"
+      },
+      {
+        "image": "images/db_4_2b9c5e0a437e4dc6abe8a39b6988d7e0.jpeg",
+        "gold": "urban chic",
+        "predicted": "streetwear"
+      },
+      {
+        "image": "images/db_6_b066f5216fc64dd3a18a4b12c8c700e7.jpeg",
+        "gold": "eclectic",
+        "predicted": "contemporary"
+      },
+      {
+        "image": "images/db_7_47bce99a6602408f865427166adad067.png",
+        "gold": "modern eclectic",
+        "predicted": "contemporary"
+      },
+      {
+        "image": "images/db_11_f377d45539d2422c8afd5c32882f215e.jpeg",
+        "gold": "streetwear",
+        "predicted": "edgy, streetwear"
+      },
+      {
+        "image": "images/db_12_178703dc94c14137a07614d07cd6a41c.jpeg",
+        "gold": "artistic streetwear",
+        "predicted": "streetwear"
+      },
+      {
+        "image": "images/db_13_64fe706c03d248dd8e3c633299889d88.jpeg",
+        "gold": "chic",
+        "predicted": "minimalist"
+      },
+      {
+        "image": "images/db_14_6f35b66771c44cd692733b605e195ce4.jpeg",
+        "gold": "minimalist",
+        "predicted": "contemporary"
+      },
+      {
+        "image": "images/db_17_b72b67bfa05f4d2197da7c67e708c4f6.jpeg",
+        "gold": "streetwear",
+        "predicted": "eclectic streetwear"
+      },
+      {
+        "image": "images/db_18_55ad68d0622c41aebcca70c90185fa8b.jpeg",
+        "gold": "streetwear",
+        "predicted": "avant-garde"
+      },
+      {
+        "image": "images/db_19_fe308a9212694d0a86cf0e29da9b28d3.jpeg",
+        "gold": "streetwear",
+        "predicted": "urban sophisticated"
+      },
+      {
+        "image": "images/db_20_8e2d665d78df4bd2bb2f89a934257a8f.jpeg",
+        "gold": "contemporary, eclectic",
+        "predicted": "streetwear"
+      },
+      {
+        "image": "images/db_21_f0745b17051e4b67bb9bf53f69ffdd32.jpeg",
+        "gold": "eclectic",
+        "predicted": "contemporary"
+      },
+      {
+        "image": "images/db_23_ef335aa5fa744001a4e17b930c92bc55.jpeg",
+        "gold": "urban chic",
+        "predicted": "modern"
+      },
+      {
+        "image": "images/db_28_cf614f81f28240ee9dd97eac6785216e.jpeg",
+        "gold": "casual streetwear",
+        "predicted": "streetwear"
+      },
+      {
+        "image": "images/db_29_d11d51b03ce040418ec4b661025e0023.jpeg",
+        "gold": "eclectic",
+        "predicted": "streetwear, playful"
+      },
+      {
+        "image": "images/db_34_9abf80b2e1fb46cc95e2ea8849bdf5c5.jpeg",
+        "gold": "streetwear",
+        "predicted": "urban streetwear"
+      },
+      {
+        "image": "images/db_37_1897730f77824388b10c4b5e4a492069.jpeg",
+        "gold": "eclectic",
+        "predicted": "vintage-inspired, eclectic"
+      },
+      {
+        "image": "images/db_38_e4998623c83746dd9ccbbff44256e033.jpeg",
+        "gold": "futuristic",
+        "predicted": "futuristic streetwear"
+      },
+      {
+        "image": "images/db_45_0eb2ab5f23ae48ac963176f6f1b44224.jpeg",
+        "gold": "eclectic streetwear",
+        "predicted": "streetwear"
+      },
+      {
+        "image": "images/db_46_cf06f63e83be43129d25b916c851db7d.jpeg",
+        "gold": "contemporary",
+        "predicted": "streetwear"
+      },
+      {
+        "image": "images/db_47_f57578afe2c4499e9913a6178e7024de.jpeg",
+        "gold": "avant-garde",
+        "predicted": "minimalist"
+      },
+      {
+        "image": "images/db_49_e388ce03b6da42af99e68a0d8dd952cc.jpeg",
+        "gold": "eclectic",
+        "predicted": "streetwear, eclectic"
+      },
+      {
+        "image": "images/db_50_26fcbedead38479499ef394fd2a89623.jpeg",
+        "gold": "eclectic",
+        "predicted": "streetwear"
+      },
+      {
+        "image": "images/db_51_b00e33952a2441fd9fb90b64a4c19e8b.jpeg",
+        "gold": "eclectic",
+        "predicted": "streetwear"
+      },
+      {
+        "image": "images/db_52_7d01f09e54014c3bbfbb6e6ba3e46963.jpeg",
+        "gold": "eclectic",
+        "predicted": "streetwear"
+      },
+      {
+        "image": "images/db_53_8803e5f147094944bf7586c1fd6b9845.jpeg",
+        "gold": "urban contemporary",
+        "predicted": "avant-garde, streetwear"
+      }
+    ],
+    "occasion": [
+      {
+        "image": "images/db_2_184b5bd9e93046738ea0e0503ea82bb3.jpg",
+        "gold": "casual, smart-casual",
+        "predicted": "business-casual"
+      },
+      {
+        "image": "images/db_3_9b7f34bbbf94449d92b6f909d9a279f8.jpg",
+        "gold": "casual, evening",
+        "predicted": "casual"
+      },
+      {
+        "image": "images/db_5_da54b6bd3bda414a85d8f1a23e00bcc5.jpeg",
+        "gold": "formal",
+        "predicted": "casual, work"
+      },
+      {
+        "image": "images/db_7_47bce99a6602408f865427166adad067.png",
+        "gold": "casual, creative work",
+        "predicted": "casual, semi-formal"
+      },
+      {
+        "image": "images/db_16_322d9c0f3ea24ddbb10d9c777d1f64c2.jpeg",
+        "gold": "fashion event",
+        "predicted": "art event"
+      },
+      {
+        "image": "images/db_19_fe308a9212694d0a86cf0e29da9b28d3.jpeg",
+        "gold": "casual",
+        "predicted": "casual, smart casual"
+      },
+      {
+        "image": "images/db_23_ef335aa5fa744001a4e17b930c92bc55.jpeg",
+        "gold": "casual",
+        "predicted": "casual, semi-formal"
+      },
+      {
+        "image": "images/db_38_e4998623c83746dd9ccbbff44256e033.jpeg",
+        "gold": "casual",
+        "predicted": "fashion-forward casual"
+      },
+      {
+        "image": "images/db_43_14948aa39afa473b9617c598fb1566ae.jpeg",
+        "gold": "business casual",
+        "predicted": "business, formal"
+      },
+      {
+        "image": "images/db_47_f57578afe2c4499e9913a6178e7024de.jpeg",
+        "gold": "fashion event",
+        "predicted": "casual"
+      },
+      {
+        "image": "images/db_48_9e33fffef98c4064953a54d1df0954af.jpeg",
+        "gold": "fashion editorial",
+        "predicted": "editorial"
+      },
+      {
+        "image": "images/db_52_7d01f09e54014c3bbfbb6e6ba3e46963.jpeg",
+        "gold": "casual, street style",
+        "predicted": "casual"
+      }
+    ],
+    "color": [
+      {
+        "image": "images/db_1_c38c8e7ca76049b49a5bb30adb56c8df.jpg",
+        "gold": "red, blue, neon yellow, black, white",
+        "predicted": "blue, red, neon yellow, black"
+      },
+      {
+        "image": "images/db_3_9b7f34bbbf94449d92b6f909d9a279f8.jpg",
+        "gold": "black, gray, white",
+        "predicted": "black, white, dark grey"
+      },
+      {
+        "image": "images/db_8_9770cca8c8fe4cfbaf0bf667db33f90f.jpeg",
+        "gold": "black, purple, red, orange, white",
+        "predicted": "black, purple, red, orange"
+      },
+      {
+        "image": "images/db_9_00cdb6f118ad48f0acc44bc7b114ddd9.jpeg",
+        "gold": "pink, neutral, white",
+        "predicted": "light pink, beige, white"
+      },
+      {
+        "image": "images/db_10_f3995a0d7e194d6fa5df1767070fd714.jpeg",
+        "gold": "tan, black, white, light blue",
+        "predicted": "beige, black, blue"
+      },
+      {
+        "image": "images/db_11_f377d45539d2422c8afd5c32882f215e.jpeg",
+        "gold": "black, white, grey",
+        "predicted": "black, white"
+      },
+      {
+        "image": "images/db_12_178703dc94c14137a07614d07cd6a41c.jpeg",
+        "gold": "cream, white, blue",
+        "predicted": "beige, white, black"
+      },
+      {
+        "image": "images/db_13_64fe706c03d248dd8e3c633299889d88.jpeg",
+        "gold": "black, white",
+        "predicted": "black, blue"
+      },
+      {
+        "image": "images/db_15_7296e3bf178d489bab90e55e20e39a25.jpeg",
+        "gold": "black, white, dark blue, brown",
+        "predicted": "black, white, dark blue"
+      },
+      {
+        "image": "images/db_16_322d9c0f3ea24ddbb10d9c777d1f64c2.jpeg",
+        "gold": "white, silver, black",
+        "predicted": "white, black, metallic"
+      },
+      {
+        "image": "images/db_18_55ad68d0622c41aebcca70c90185fa8b.jpeg",
+        "gold": "dark blue, neon green, white",
+        "predicted": "navy, neon green, beige"
+      },
+      {
+        "image": "images/db_19_fe308a9212694d0a86cf0e29da9b28d3.jpeg",
+        "gold": "beige, teal, blue, brown, olive",
+        "predicted": "beige, teal, blue, brown"
+      },
+      {
+        "image": "images/db_20_8e2d665d78df4bd2bb2f89a934257a8f.jpeg",
+        "gold": "grey, yellow, beige",
+        "predicted": "gray, yellow, neutrals"
+      },
+      {
+        "image": "images/db_21_f0745b17051e4b67bb9bf53f69ffdd32.jpeg",
+        "gold": "gray, beige, yellow, white",
+        "predicted": "grey, yellow, neutral tones"
+      },
+      {
+        "image": "images/db_22_c426576ad0c94b5cafffbab330d61539.jpeg",
+        "gold": "green, black",
+        "predicted": "turquoise, black"
+      },
+      {
+        "image": "images/db_23_ef335aa5fa744001a4e17b930c92bc55.jpeg",
+        "gold": "gray, black",
+        "predicted": "grey, black"
+      },
+      {
+        "image": "images/db_25_36b442a580b14b4ca44953c6486cffc2.jpeg",
+        "gold": "black, orange, white, blue",
+        "predicted": "black, white, orange, grey"
+      },
+      {
+        "image": "images/db_28_cf614f81f28240ee9dd97eac6785216e.jpeg",
+        "gold": "blue, white, yellow",
+        "predicted": "blue, white"
+      },
+      {
+        "image": "images/db_31_fe950c6f9a41412f99a240ce046af89c.jpeg",
+        "gold": "pink, white, yellow, red, orange, blue",
+        "predicted": "pink, yellow, red, white, blue"
+      },
+      {
+        "image": "images/db_32_dceecbeb8c8442559fef7a5d249981dc.jpeg",
+        "gold": "yellow, red, orange, green, blue",
+        "predicted": "yellow, red, gray, green, orange"
+      },
+      {
+        "image": "images/db_33_47646931bd514b1fb835f888b5ac4f41.jpeg",
+        "gold": "yellow, red, orange, green, blue",
+        "predicted": "red, yellow, green, orange, denim"
+      },
+      {
+        "image": "images/db_34_9abf80b2e1fb46cc95e2ea8849bdf5c5.jpeg",
+        "gold": "yellow, red, grey, orange, green",
+        "predicted": "yellow, red, orange, green, gray"
+      },
+      {
+        "image": "images/db_35_0afe0f2792b04214b247d4d37509e514.jpeg",
+        "gold": "neon yellow, bright red, black, blue, tie-dye",
+        "predicted": "neon yellow, black, red, blue, orange"
+      },
+      {
+        "image": "images/db_37_1897730f77824388b10c4b5e4a492069.jpeg",
+        "gold": "black, white, orange, blue",
+        "predicted": "black, white, blue, yellow"
+      },
+      {
+        "image": "images/db_40_290a04c7415f44ba9445b2e545bf1a50.jpeg",
+        "gold": "yellow, lavender, blue, beige, pink",
+        "predicted": "pastel purple, yellow, beige, blue"
+      },
+      {
+        "image": "images/db_41_ba8dfea9c8a84b75b0c74646895ad696.jpeg",
+        "gold": "yellow, blue, pink, lilac, beige",
+        "predicted": "yellow, purple, blue, pink"
+      },
+      {
+        "image": "images/db_42_8cec31a39f154f3b81dfdeee530707d4.jpeg",
+        "gold": "beige, pastel purple, pink, blue",
+        "predicted": "lavender, pink, blue, beige"
+      },
+      {
+        "image": "images/db_43_14948aa39afa473b9617c598fb1566ae.jpeg",
+        "gold": "black, gray, brown",
+        "predicted": "black, grey"
+      },
+      {
+        "image": "images/db_44_4b712af7b47247c880f615d8977f1105.jpeg",
+        "gold": "red, blue, black, neon yellow",
+        "predicted": "red, blue, black, neon green"
+      },
+      {
+        "image": "images/db_45_0eb2ab5f23ae48ac963176f6f1b44224.jpeg",
+        "gold": "pink, orange, beige, denim blue, camo olive",
+        "predicted": "orange, pink, blue, beige, white, black"
+      },
+      {
+        "image": "images/db_48_9e33fffef98c4064953a54d1df0954af.jpeg",
+        "gold": "white, black, nude",
+        "predicted": "white, black"
+      },
+      {
+        "image": "images/db_49_e388ce03b6da42af99e68a0d8dd952cc.jpeg",
+        "gold": "orange, black, white, red, blue",
+        "predicted": "orange, black, white, multicolor"
+      },
+      {
+        "image": "images/db_53_8803e5f147094944bf7586c1fd6b9845.jpeg",
+        "gold": "burgundy, multicolored, white",
+        "predicted": "multicolor, burgundy"
+      }
+    ]
+  },
+  "failure_counts_string": {
+    "garment_type": 39,
+    "style": 29,
+    "occasion": 12,
+    "color": 33
+  },
+  "rows": [
+    {
+      "image": "images/db_1_c38c8e7ca76049b49a5bb30adb56c8df.jpg",
+      "fields": {
+        "garment_type": {
+          "gold": "joggers",
+          "predicted": "streetwear ensemble",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "urban streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "red, blue, neon yellow, black, white",
+          "predicted": "blue, red, neon yellow, black",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_2_184b5bd9e93046738ea0e0503ea82bb3.jpg",
+      "fields": {
+        "garment_type": {
+          "gold": "pink suit",
+          "predicted": "suit",
+          "match": false
+        },
+        "style": {
+          "gold": "contemporary",
+          "predicted": "modern",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual, smart-casual",
+          "predicted": "business-casual",
+          "match": false
+        },
+        "color": {
+          "gold": "pink, beige, white",
+          "predicted": "pink, white, beige",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_3_9b7f34bbbf94449d92b6f909d9a279f8.jpg",
+      "fields": {
+        "garment_type": {
+          "gold": "fitted dress",
+          "predicted": "black dress with slit, leather jacket with jeans",
+          "match": false
+        },
+        "style": {
+          "gold": "modern, edgy",
+          "predicted": "streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual, evening",
+          "predicted": "casual",
+          "match": false
+        },
+        "color": {
+          "gold": "black, gray, white",
+          "predicted": "black, white, dark grey",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_4_2b9c5e0a437e4dc6abe8a39b6988d7e0.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "coat",
+          "predicted": "trench coat",
+          "match": false
+        },
+        "style": {
+          "gold": "urban chic",
+          "predicted": "streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "yellow, beige, white, black",
+          "predicted": "beige, yellow, white, black",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_5_da54b6bd3bda414a85d8f1a23e00bcc5.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "suit",
+          "predicted": "suit",
+          "match": true
+        },
+        "style": {
+          "gold": "minimalist",
+          "predicted": "minimalist",
+          "match": true
+        },
+        "occasion": {
+          "gold": "formal",
+          "predicted": "casual, work",
+          "match": false
+        },
+        "color": {
+          "gold": "white",
+          "predicted": "white",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_6_b066f5216fc64dd3a18a4b12c8c700e7.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "oversized jacket",
+          "predicted": "oversized jacket",
+          "match": true
+        },
+        "style": {
+          "gold": "eclectic",
+          "predicted": "contemporary",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "black, white, red, yellow",
+          "predicted": "black, white, red, yellow",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_7_47bce99a6602408f865427166adad067.png",
+      "fields": {
+        "garment_type": {
+          "gold": "blazer",
+          "predicted": "blazer",
+          "match": true
+        },
+        "style": {
+          "gold": "modern eclectic",
+          "predicted": "contemporary",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual, creative work",
+          "predicted": "casual, semi-formal",
+          "match": false
+        },
+        "color": {
+          "gold": "black, tan, white",
+          "predicted": "black, tan, white, yellow",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_8_9770cca8c8fe4cfbaf0bf667db33f90f.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "oversized graphic t-shirt",
+          "predicted": "oversized t-shirt",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "black, purple, red, orange, white",
+          "predicted": "black, purple, red, orange",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_9_00cdb6f118ad48f0acc44bc7b114ddd9.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "suit",
+          "predicted": "pantsuit",
+          "match": false
+        },
+        "style": {
+          "gold": "contemporary",
+          "predicted": "contemporary",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "pink, neutral, white",
+          "predicted": "light pink, beige, white",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_10_f3995a0d7e194d6fa5df1767070fd714.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "trench coat, leather jacket",
+          "predicted": "trench coat, leather jacket",
+          "match": true
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "tan, black, white, light blue",
+          "predicted": "beige, black, blue",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_11_f377d45539d2422c8afd5c32882f215e.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "black dress",
+          "predicted": "sheer dress, leather jacket",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "edgy, streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "black, white, grey",
+          "predicted": "black, white",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_12_178703dc94c14137a07614d07cd6a41c.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "blazer",
+          "predicted": "blazer",
+          "match": true
+        },
+        "style": {
+          "gold": "artistic streetwear",
+          "predicted": "streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "cream, white, blue",
+          "predicted": "beige, white, black",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_13_64fe706c03d248dd8e3c633299889d88.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "maxi skirt",
+          "predicted": "long dress",
+          "match": false
+        },
+        "style": {
+          "gold": "chic",
+          "predicted": "minimalist",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "black, white",
+          "predicted": "black, blue",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_14_6f35b66771c44cd692733b605e195ce4.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "blazer",
+          "predicted": "blazer",
+          "match": true
+        },
+        "style": {
+          "gold": "minimalist",
+          "predicted": "contemporary",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "beige, white",
+          "predicted": "beige, white",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_15_7296e3bf178d489bab90e55e20e39a25.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "blazer",
+          "predicted": "blazer",
+          "match": true
+        },
+        "style": {
+          "gold": "minimalist",
+          "predicted": "minimalist",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "black, white, dark blue, brown",
+          "predicted": "black, white, dark blue",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_16_322d9c0f3ea24ddbb10d9c777d1f64c2.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "white shirt",
+          "predicted": "structured shirt with embellishments",
+          "match": false
+        },
+        "style": {
+          "gold": "avant-garde",
+          "predicted": "avant-garde",
+          "match": true
+        },
+        "occasion": {
+          "gold": "fashion event",
+          "predicted": "art event",
+          "match": false
+        },
+        "color": {
+          "gold": "white, silver, black",
+          "predicted": "white, black, metallic",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_17_b72b67bfa05f4d2197da7c67e708c4f6.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "denim jacket",
+          "predicted": "streetwear",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "eclectic streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "blue, black, red, white",
+          "predicted": "red, blue, black, white",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_18_55ad68d0622c41aebcca70c90185fa8b.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "cargo jacket",
+          "predicted": "utility suit",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "avant-garde",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "dark blue, neon green, white",
+          "predicted": "navy, neon green, beige",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_19_fe308a9212694d0a86cf0e29da9b28d3.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "trench coat",
+          "predicted": "trench coat, blazer, denim jeans",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "urban sophisticated",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual, smart casual",
+          "match": false
+        },
+        "color": {
+          "gold": "beige, teal, blue, brown, olive",
+          "predicted": "beige, teal, blue, brown",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_20_8e2d665d78df4bd2bb2f89a934257a8f.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "plaid blazer",
+          "predicted": "blazer",
+          "match": false
+        },
+        "style": {
+          "gold": "contemporary, eclectic",
+          "predicted": "streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "grey, yellow, beige",
+          "predicted": "gray, yellow, neutrals",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_21_f0745b17051e4b67bb9bf53f69ffdd32.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "blazer",
+          "predicted": "blazer",
+          "match": true
+        },
+        "style": {
+          "gold": "eclectic",
+          "predicted": "contemporary",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "gray, beige, yellow, white",
+          "predicted": "grey, yellow, neutral tones",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_22_c426576ad0c94b5cafffbab330d61539.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "faux fur coat",
+          "predicted": "faux fur coat",
+          "match": true
+        },
+        "style": {
+          "gold": "statement",
+          "predicted": "statement",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "green, black",
+          "predicted": "turquoise, black",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_23_ef335aa5fa744001a4e17b930c92bc55.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "denim dress",
+          "predicted": "denim dress",
+          "match": true
+        },
+        "style": {
+          "gold": "urban chic",
+          "predicted": "modern",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual, semi-formal",
+          "match": false
+        },
+        "color": {
+          "gold": "gray, black",
+          "predicted": "grey, black",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_24_7838ba9445534a44a831bf18ab1d0873.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "oversized blazer",
+          "predicted": "blazer and cropped top",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "beige, white, black",
+          "predicted": "beige, black, white, red",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_25_36b442a580b14b4ca44953c6486cffc2.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "bomber jacket",
+          "predicted": "bomber jacket, hoodie, oversized shirt",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "black, orange, white, blue",
+          "predicted": "black, white, orange, grey",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_26_25d731788c6f4ef19a0fafacc04808dc.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "denim jacket",
+          "predicted": "denim jacket",
+          "match": true
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "blue, white",
+          "predicted": "blue, white",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_27_762a9f5d7be040b8aa3a62120111d28c.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "denim jacket",
+          "predicted": "denim jackets and pants",
+          "match": false
+        },
+        "style": {
+          "gold": "casual streetwear",
+          "predicted": "casual streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "blue, white, yellow",
+          "predicted": "blue, white, yellow",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_28_cf614f81f28240ee9dd97eac6785216e.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "denim ensemble",
+          "predicted": "denim jacket",
+          "match": false
+        },
+        "style": {
+          "gold": "casual streetwear",
+          "predicted": "streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "blue, white, yellow",
+          "predicted": "blue, white",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_29_d11d51b03ce040418ec4b661025e0023.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "streetwear",
+          "predicted": "hoodie, plaid skirt, t-shirt, wide-leg jeans, jumpsuit",
+          "match": false
+        },
+        "style": {
+          "gold": "eclectic",
+          "predicted": "streetwear, playful",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "pink, yellow, white, red, blue",
+          "predicted": "pink, yellow, red, blue, white",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_30_e82dbecee4b54ad79dd34c9f63f4feb8.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "jumpsuit",
+          "predicted": "casual wear",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "yellow, pink, red, blue",
+          "predicted": "yellow, pink, white, red, blue",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_31_fe950c6f9a41412f99a240ce046af89c.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "hoodie, t-shirt, sweater, striped top, jumpsuit",
+          "predicted": "hoodie, t-shirt, sweater, striped shirt, jumpsuit",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "pink, white, yellow, red, orange, blue",
+          "predicted": "pink, yellow, red, white, blue",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_32_dceecbeb8c8442559fef7a5d249981dc.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "hoodie",
+          "predicted": "varied, including trench coat, PVC dress, hoodies",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "yellow, red, orange, green, blue",
+          "predicted": "yellow, red, gray, green, orange",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_33_47646931bd514b1fb835f888b5ac4f41.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "casual streetwear",
+          "predicted": "streetwear mix",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "yellow, red, orange, green, blue",
+          "predicted": "red, yellow, green, orange, denim",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_34_9abf80b2e1fb46cc95e2ea8849bdf5c5.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "colorful sweatshirt",
+          "predicted": "streetwear",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "urban streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "yellow, red, grey, orange, green",
+          "predicted": "yellow, red, orange, green, gray",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_35_0afe0f2792b04214b247d4d37509e514.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "hoodie",
+          "predicted": "streetwear layers",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "neon yellow, bright red, black, blue, tie-dye",
+          "predicted": "neon yellow, black, red, blue, orange",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_36_f22d9d4527ca402dba08a61171744f28.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "plaid shirt dress",
+          "predicted": "plaid dress, oversized shirt",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "black, yellow, white",
+          "predicted": "black, yellow, white",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_37_1897730f77824388b10c4b5e4a492069.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "plaid top",
+          "predicted": "plaid shirt, denim skirt",
+          "match": false
+        },
+        "style": {
+          "gold": "eclectic",
+          "predicted": "vintage-inspired, eclectic",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "black, white, orange, blue",
+          "predicted": "black, white, blue, yellow",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_38_e4998623c83746dd9ccbbff44256e033.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "asymmetrical dress",
+          "predicted": "asymmetrical dress",
+          "match": true
+        },
+        "style": {
+          "gold": "futuristic",
+          "predicted": "futuristic streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "fashion-forward casual",
+          "match": false
+        },
+        "color": {
+          "gold": "black, white",
+          "predicted": "black, white",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_39_45efe3456e5949a2904f3cc0c1ccce63.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "blazer",
+          "predicted": "outerwear",
+          "match": false
+        },
+        "style": {
+          "gold": "minimalist",
+          "predicted": "minimalist",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "black, white",
+          "predicted": "black, white",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_40_290a04c7415f44ba9445b2e545bf1a50.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "hoodie",
+          "predicted": "tie-dye sweater, sherpa vest, hoodie",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "yellow, lavender, blue, beige, pink",
+          "predicted": "pastel purple, yellow, beige, blue",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_41_ba8dfea9c8a84b75b0c74646895ad696.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "vest",
+          "predicted": "casual streetwear",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "yellow, blue, pink, lilac, beige",
+          "predicted": "yellow, purple, blue, pink",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_42_8cec31a39f154f3b81dfdeee530707d4.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "sherpa vest",
+          "predicted": "denim jeans and printed long-sleeve shirt",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "beige, pastel purple, pink, blue",
+          "predicted": "lavender, pink, blue, beige",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_43_14948aa39afa473b9617c598fb1566ae.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "sleeveless top",
+          "predicted": "blazer",
+          "match": false
+        },
+        "style": {
+          "gold": "contemporary",
+          "predicted": "contemporary",
+          "match": true
+        },
+        "occasion": {
+          "gold": "business casual",
+          "predicted": "business, formal",
+          "match": false
+        },
+        "color": {
+          "gold": "black, gray, brown",
+          "predicted": "black, grey",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_44_4b712af7b47247c880f615d8977f1105.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "sweatpants",
+          "predicted": "joggers, crop top, oversized jacket",
+          "match": false
+        },
+        "style": {
+          "gold": "streetwear",
+          "predicted": "streetwear",
+          "match": true
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "red, blue, black, neon yellow",
+          "predicted": "red, blue, black, neon green",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_45_0eb2ab5f23ae48ac963176f6f1b44224.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "layered outerwear",
+          "predicted": "denim jacket, cargo pants, hooded jacket",
+          "match": false
+        },
+        "style": {
+          "gold": "eclectic streetwear",
+          "predicted": "streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "pink, orange, beige, denim blue, camo olive",
+          "predicted": "orange, pink, blue, beige, white, black",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_46_cf06f63e83be43129d25b916c851db7d.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "sheer shirt",
+          "predicted": "sheer shirt",
+          "match": true
+        },
+        "style": {
+          "gold": "contemporary",
+          "predicted": "streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "pink, white",
+          "predicted": "pink, white, yellow",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_47_f57578afe2c4499e9913a6178e7024de.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "dress",
+          "predicted": "dress",
+          "match": true
+        },
+        "style": {
+          "gold": "avant-garde",
+          "predicted": "minimalist",
+          "match": false
+        },
+        "occasion": {
+          "gold": "fashion event",
+          "predicted": "casual",
+          "match": false
+        },
+        "color": {
+          "gold": "black, white",
+          "predicted": "black, white",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_48_9e33fffef98c4064953a54d1df0954af.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "structured white top",
+          "predicted": "oversized vest",
+          "match": false
+        },
+        "style": {
+          "gold": "avant-garde",
+          "predicted": "avant-garde",
+          "match": true
+        },
+        "occasion": {
+          "gold": "fashion editorial",
+          "predicted": "editorial",
+          "match": false
+        },
+        "color": {
+          "gold": "white, black, nude",
+          "predicted": "white, black",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_49_e388ce03b6da42af99e68a0d8dd952cc.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "sequin skirt",
+          "predicted": "graphic tee, sequined skirt",
+          "match": false
+        },
+        "style": {
+          "gold": "eclectic",
+          "predicted": "streetwear, eclectic",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "orange, black, white, red, blue",
+          "predicted": "orange, black, white, multicolor",
+          "match": false
+        }
+      }
+    },
+    {
+      "image": "images/db_50_26fcbedead38479499ef394fd2a89623.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "T-shirt",
+          "predicted": "graphic t-shirt, abstract shirt, strapless top",
+          "match": false
+        },
+        "style": {
+          "gold": "eclectic",
+          "predicted": "streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "orange, black, white, multicolor",
+          "predicted": "orange, white, black, multicolor",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_51_b00e33952a2441fd9fb90b64a4c19e8b.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "mesh top",
+          "predicted": "layered tops and skirts",
+          "match": false
+        },
+        "style": {
+          "gold": "eclectic",
+          "predicted": "streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "olive, white, blue, yellow",
+          "predicted": "yellow, blue, olive, white",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_52_7d01f09e54014c3bbfbb6e6ba3e46963.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "plaid suit",
+          "predicted": "suit, two-piece outfit",
+          "match": false
+        },
+        "style": {
+          "gold": "eclectic",
+          "predicted": "streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual, street style",
+          "predicted": "casual",
+          "match": false
+        },
+        "color": {
+          "gold": "pink, orange, green, multicolor",
+          "predicted": "pink, orange, green, multicolor",
+          "match": true
+        }
+      }
+    },
+    {
+      "image": "images/db_53_8803e5f147094944bf7586c1fd6b9845.jpeg",
+      "fields": {
+        "garment_type": {
+          "gold": "vinyl coat",
+          "predicted": "printed shirt, glossy coat",
+          "match": false
+        },
+        "style": {
+          "gold": "urban contemporary",
+          "predicted": "avant-garde, streetwear",
+          "match": false
+        },
+        "occasion": {
+          "gold": "casual",
+          "predicted": "casual",
+          "match": true
+        },
+        "color": {
+          "gold": "burgundy, multicolored, white",
+          "predicted": "multicolor, burgundy",
+          "match": false
+        }
+      }
+    }
+  ],
+  "errors": []
+}
