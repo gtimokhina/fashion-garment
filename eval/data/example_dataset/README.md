@@ -44,9 +44,11 @@ Each **label** value is a string. Use empty string or omit a key if you do not w
 | `garment_type` | `garment_type`            | Normalized exact match. |
 | `style`        | `style`                   | Normalized exact match. |
 | `occasion`     | `occasion`                | Normalized exact match. |
-| `color`        | `color_palette`           | Exact match after normalization, or (default) every comma-separated token in the label appears in the prediction. |
+| `color`        | `color_palette`           | See `--color-mode`: **strict** (normalized equality) or **token** (default): each comma-separated token in gold appears as a substring in the prediction. |
 
 The classifier does not emit a field named `color`; gold `color` is compared to **`color_palette`**.
+
+For **garment_type**, **style**, and **occasion**, `run_eval.py` supports **`--text-match exact`** (default: full normalized string match) or **`--text-match token`** (each comma-separated fragment in gold must appear in the prediction — helpful when gold lists multiple styles or occasions).
 
 ## Example
 

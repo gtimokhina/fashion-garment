@@ -4,7 +4,7 @@ Populate designer tags and notes from each row's AI description + structured met
 
 Calls the same OpenAI model as classification to suggest **3–5** tags and **one short
 sentence** of notes (compact; no “The image features…” openings). By default replaces
-existing annotations; use --merge to union tags and append notes.
+tags and notes only (**designer** is preserved). Use --merge to union tags and append notes.
 
   cd app/backend && source .venv/bin/activate
   python3 scripts/sync_annotations_from_description.py --dry-run
@@ -108,7 +108,11 @@ def main() -> int:
                 )
                 fresh.annotations = merged
             else:
-                fresh.annotations = suggested
+                fresh.annotations = merge_annotation_patch(
+                    fresh.annotations,
+                    tags=suggested["tags"],
+                    notes=suggested["notes"],
+                )
             session.commit()
             print(f"id={row.id}: tags={len(suggested['tags'])} notes={len(suggested['notes'])} chars")
             ok += 1

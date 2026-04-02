@@ -73,13 +73,20 @@ Dependencies: install with **`pip install -r requirements.txt`** or, if you use 
 | `tests/integration/` | Integration tests. |
 | `tests/e2e/` | End-to-end tests. |
 
+**Run backend tests** (from repo root; needs backend deps plus `app/backend/requirements-dev.txt`):
+
+```bash
+pip install -r app/backend/requirements.txt -r app/backend/requirements-dev.txt
+pytest
+```
+
 ## Architecture
 
 The browser talks only to **Next.js** for pages and static assets. Client-side `fetch` uses `NEXT_PUBLIC_API_URL` to reach **FastAPI** (JSON, uploads, and future search endpoints). **SQLite** is opened exclusively from the Python process via **SQLAlchemy** (`models/database.py`, `Image` ORM). Upload runs **GPT-4o** classification and persists `description`, `metadata` (structured attributes), and `annotations` (JSON, initially `{}`).
 
 ## Evaluation
 
-See `eval/` for scripts and labeled data. **Classifier eval** (gold labels vs model output):
+See **[`eval/README.md`](eval/README.md)** for the full pipeline. **Classifier eval** (gold labels vs model output for `garment_type`, `style`, `occasion`, `color`):
 
 ```bash
 cd app/backend && source .venv/bin/activate   # optional
@@ -88,7 +95,7 @@ python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset
 
 Dataset format: [`eval/data/example_dataset/README.md`](eval/data/example_dataset/README.md) and [`labels.example.json`](eval/data/example_dataset/labels.example.json). **Export from DB** (images + labels from stored metadata): `python3 eval/scripts/export_dataset_from_db.py` from `app/backend`, or from repo root: `bash eval/run_example_eval.sh` (export + eval in one step).
 
-Requires `OPENAI_*` in `app/backend/.env`. Use `--verbose` for per-image tables and `--output-json path` for machine-readable results.
+Requires `OPENAI_*` in `app/backend/.env`. Use `--verbose` for per-image tables, `--output-json path` for machine-readable results, `--text-match token` if gold strings use comma-separated multi-labels for text fields, and **`--llm-judge text`** (or **`vision`**) for an optional second LLM that scores semantic agreement with gold labels (see `eval/README.md`).
 
 **Bulk fashion images (Pexels):** use the official API (not the search webpage). Get a free key at [pexels.com/api](https://www.pexels.com/api/), add `PEXELS_API_KEY=...` to `app/backend/.env` (same file as the backend), then:
 

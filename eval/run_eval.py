@@ -1,17 +1,11 @@
 #!/usr/bin/env python3
 """
-Evaluate the vision classifier against a labeled image dataset.
-
-Loads images + labels (see eval/data/example_dataset/), runs the same
-:classify_image pipeline as production, and reports per-field accuracy for:
-garment_type, style, occasion, color (gold ``color`` vs predicted ``color_palette``).
-
-Usage (from repo root, backend venv recommended):
+CLI for classifier evaluation. Core logic lives in :mod:`evaluation`.
 
   cd app/backend && source .venv/bin/activate
   python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset
 
-Environment: OPENAI_API_KEY and optional OPENAI_MODEL (see app/backend/.env).
+See :file:`README.md` in this directory and :file:`data/example_dataset/README.md`.
 """
 
 from __future__ import annotations
@@ -20,227 +14,31 @@ import argparse
 import json
 import os
 import sys
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
-# Resolve backend package (loads app/backend/.env via ai_classifier → config)
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BACKEND_ROOT = REPO_ROOT / "app" / "backend"
 sys.path.insert(0, str(BACKEND_ROOT))
 os.chdir(BACKEND_ROOT)
 
-from services.ai_classifier import ImageClassification, classify_image  # noqa: E402
-
-EVAL_FIELDS = ("garment_type", "style", "occasion", "color")
-
-
-def normalize_whitespace(s: str) -> str:
-    return " ".join(s.lower().split()).strip()
-
-
-def prediction_for_label_key(pred: ImageClassification, label_key: str) -> str:
-    if label_key == "color":
-        return pred.color_palette.value
-    attr = getattr(pred, label_key, None)
-    if attr is None:
-        return ""
-    return attr.value if hasattr(attr, "value") else str(attr)
-
-
-def match_field(gold: str, pred: str, label_key: str, *, color_mode: str) -> bool:
-    """Return True if gold label matches prediction under the chosen rules."""
-    g = normalize_whitespace(gold)
-    p = normalize_whitespace(pred)
-    if not g:
-        return True  # defensive; skipped upstream when gold empty
-    if not p:
-        return False
-
-    if label_key != "color":
-        return g == p
-
-    if color_mode == "strict":
-        return g == p
-
-    # token: each comma-separated token in gold must appear in the prediction (substring).
-    tokens = [t.strip() for t in gold.split(",") if t.strip()]
-    if not tokens:
-        return g == p
-    pl = p
-    return all(normalize_whitespace(t) in pl for t in tokens)
-
-
-@dataclass
-class FieldStats:
-    correct: int = 0
-    total: int = 0
-
-    @property
-    def accuracy(self) -> float | None:
-        if self.total == 0:
-            return None
-        return self.correct / self.total
-
-
-@dataclass
-class EvalState:
-    per_field: dict[str, FieldStats] = field(
-        default_factory=lambda: {f: FieldStats() for f in EVAL_FIELDS}
-    )
-    errors: list[str] = field(default_factory=list)
-    rows: list[dict[str, Any]] = field(default_factory=list)
-
-
-def load_dataset(dataset_dir: Path) -> tuple[list[dict[str, Any]], Path]:
-    """Return (items, resolved dataset dir)."""
-    root = dataset_dir.resolve()
-    labels_path = root / "labels.json"
-    if not labels_path.is_file():
-        raise FileNotFoundError(f"Missing labels.json in {root}")
-    raw = json.loads(labels_path.read_text(encoding="utf-8"))
-    if not isinstance(raw, dict):
-        raise ValueError("labels.json must be a JSON object")
-    items = raw.get("items")
-    if not isinstance(items, list):
-        raise ValueError('labels.json must contain an "items" array')
-    return items, root
-
-
-def run_eval(
-    dataset_dir: Path,
-    *,
-    color_mode: str,
-    limit: int | None,
-) -> EvalState:
-    items, root = load_dataset(dataset_dir)
-    state = EvalState()
-
-    for i, item in enumerate(items):
-        if limit is not None and i >= limit:
-            break
-        if not isinstance(item, dict):
-            state.errors.append(f"items[{i}]: expected object, skipping")
-            continue
-        rel = item.get("image")
-        labels = item.get("labels")
-        if not isinstance(rel, str) or not rel.strip():
-            state.errors.append(f"items[{i}]: missing image path")
-            continue
-        if not isinstance(labels, dict):
-            state.errors.append(f"items[{i}]: missing labels object")
-            continue
-
-        img_path = (root / rel).resolve()
-        if not img_path.is_file():
-            state.errors.append(f"Image not found: {img_path}")
-            continue
-
-        try:
-            pred = classify_image(img_path).classification
-        except Exception as e:
-            state.errors.append(f"{rel}: classify_image failed: {e}")
-            continue
-
-        row: dict[str, Any] = {
-            "image": rel,
-            "fields": {},
-        }
-        for fk in EVAL_FIELDS:
-            raw = labels.get(fk)
-            gold = str(raw).strip() if raw is not None else ""
-            if not gold:
-                row["fields"][fk] = {"skipped": True}
-                continue
-            pr = prediction_for_label_key(pred, fk)
-            ok = match_field(gold, pr, fk, color_mode=color_mode)
-            state.per_field[fk].total += 1
-            if ok:
-                state.per_field[fk].correct += 1
-            row["fields"][fk] = {
-                "gold": gold,
-                "predicted": pr,
-                "match": ok,
-            }
-
-        state.rows.append(row)
-
-    return state
-
-
-def format_results_table(state: EvalState) -> str:
-    lines = [
-        "",
-        "| Field | Correct | Total | Accuracy |",
-        "|-------|---------|-------|----------|",
-    ]
-    for fk in EVAL_FIELDS:
-        st = state.per_field[fk]
-        acc = st.accuracy
-        acc_s = f"{acc:.1%}" if acc is not None else "n/a"
-        lines.append(f"| {fk} | {st.correct} | {st.total} | {acc_s} |")
-    return "\n".join(lines)
-
-
-def format_per_image_table(state: EvalState) -> str:
-    if not state.rows:
-        return ""
-    header = "| Image | " + " | ".join(EVAL_FIELDS) + " |"
-    sep = "|" + "|".join(["---"] * (1 + len(EVAL_FIELDS))) + "|"
-    lines = ["", "### Per image", "", header, sep]
-    for row in state.rows:
-        img = row["image"].replace("|", "\\|")
-        cells = []
-        for fk in EVAL_FIELDS:
-            fd = row["fields"].get(fk, {})
-            if fd.get("skipped"):
-                cells.append("—")
-            elif fd.get("match"):
-                cells.append("✓")
-            else:
-                cells.append("✗")
-        lines.append("| " + img + " | " + " | ".join(cells) + " |")
-    return "\n".join(lines)
-
-
-def summary_insights(state: EvalState, n_images: int) -> list[str]:
-    lines: list[str] = []
-    lines.append(f"Images successfully classified: {n_images}.")
-    if state.errors:
-        lines.append(f"Warnings/errors: {len(state.errors)} (see below).")
-
-    scored = [
-        (fk, state.per_field[fk].accuracy, state.per_field[fk].total)
-        for fk in EVAL_FIELDS
-        if state.per_field[fk].total > 0
-    ]
-    if not scored:
-        lines.append("No labeled fields to score (add non-empty labels in labels.json).")
-        return lines
-
-    scored.sort(key=lambda x: x[1] or 0.0)
-    worst = scored[0]
-    best = scored[-1]
-    lines.append(
-        f"Lowest accuracy: **{worst[0]}** ({worst[1]:.1%} over {worst[2]} labeled instances)."
-    )
-    lines.append(
-        f"Highest accuracy: **{best[0]}** ({best[1]:.1%} over {best[2]} labeled instances)."
-    )
-
-    # Short interpretation
-    spread = (best[1] or 0) - (worst[1] or 0)
-    if spread > 0.2:
-        lines.append(
-            "Large gap between fields — consider more consistent gold labels or a tuned prompt for weaker attributes."
-        )
-    elif spread < 0.05 and best[1] and best[1] > 0.8:
-        lines.append("Fields are relatively balanced and overall scores are high on this set.")
-    return lines
+from evaluation import (  # noqa: E402  # import after path/cwd
+    format_failure_examples_md,
+    format_judge_table_md,
+    format_judge_table_plain,
+    format_performance_report_md,
+    format_per_image_table,
+    format_results_table_md,
+    format_results_table_plain,
+    json_payload,
+    run_eval,
+    summary_insights,
+)
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run classifier eval on a labeled dataset.")
+    parser = argparse.ArgumentParser(
+        description="Evaluate the vision classifier on a labeled image dataset (see eval/data/example_dataset).",
+    )
     parser.add_argument(
         "--dataset",
         type=Path,
@@ -251,7 +49,14 @@ def main() -> int:
         "--color-mode",
         choices=("strict", "token"),
         default="token",
-        help="How to score color: strict normalized equality, or token (each gold comma-token in pred).",
+        help="Color: strict normalized equality, or token (each gold comma-token substring in prediction).",
+    )
+    parser.add_argument(
+        "--text-match",
+        choices=("exact", "token"),
+        default="exact",
+        help="garment_type, style, occasion: exact string match after normalization, or token "
+        "(each comma-separated gold fragment must appear in prediction).",
     )
     parser.add_argument(
         "--limit",
@@ -270,13 +75,43 @@ def main() -> int:
         default=None,
         help="Write full results (counts, rows, errors) to this JSON file",
     )
+    parser.add_argument(
+        "--format",
+        choices=("md", "plain", "both"),
+        default="both",
+        help="Result table: Markdown, plain ASCII, or both (default: both)",
+    )
+    parser.add_argument(
+        "--llm-judge",
+        choices=("none", "text", "vision"),
+        default="none",
+        help="Optional second LLM pass: semantic agreement with gold. "
+        "'text' uses classifier description + labels (cheap). "
+        "'vision' re-sends the image (expensive). Default: none.",
+    )
+    parser.add_argument(
+        "--failure-examples",
+        type=int,
+        default=8,
+        metavar="N",
+        help="Max incorrect examples printed per attribute (string rules + judge); 0 = counts only. Default: 8.",
+    )
+    parser.add_argument(
+        "--no-performance-report",
+        action="store_true",
+        help="Skip the performance narrative and grouped failure sections.",
+    )
     args = parser.parse_args()
+
+    judge_mode = None if args.llm_judge == "none" else args.llm_judge
 
     try:
         state = run_eval(
             args.dataset,
             color_mode=args.color_mode,
+            text_match=args.text_match,
             limit=args.limit,
+            judge_mode=judge_mode,
         )
     except (FileNotFoundError, ValueError) as e:
         print(e, file=sys.stderr)
@@ -287,9 +122,41 @@ def main() -> int:
     print()
     print(f"- Dataset: `{args.dataset.resolve()}`")
     print(f"- Color scoring: **{args.color_mode}**")
+    print(f"- Text fields (garment_type, style, occasion): **{args.text_match}**")
+    if judge_mode:
+        print(f"- LLM judge: **{judge_mode}** (semantic agreement; see second table)")
     print()
-    print("## Summary (accuracy per field)")
-    print(format_results_table(state))
+    print("## Summary (string rules — accuracy per field)")
+    if args.format in ("md", "both"):
+        print(format_results_table_md(state))
+    if args.format == "both":
+        print()
+        print("### Plain table")
+        print(format_results_table_plain(state))
+    elif args.format == "plain":
+        print(format_results_table_plain(state))
+
+    if judge_mode and state.judge_per_field:
+        print()
+        print("## LLM judge (semantic agreement with gold)")
+        if args.format in ("md", "both"):
+            print(format_judge_table_md(state))
+        if args.format == "both":
+            print()
+            print("### Plain (judge)")
+            print(format_judge_table_plain(state))
+        elif args.format == "plain":
+            print(format_judge_table_plain(state))
+
+    if not args.no_performance_report:
+        print(format_performance_report_md(state))
+        print(
+            format_failure_examples_md(
+                state,
+                max_per_field=max(0, args.failure_examples),
+                include_judge=bool(judge_mode),
+            )
+        )
 
     print()
     print("## Insights")
@@ -311,20 +178,12 @@ def main() -> int:
             print(f"- {e}")
 
     if args.output_json:
-        out = {
-            "dataset": str(args.dataset.resolve()),
-            "color_mode": args.color_mode,
-            "per_field": {
-                fk: {
-                    "correct": state.per_field[fk].correct,
-                    "total": state.per_field[fk].total,
-                    "accuracy": state.per_field[fk].accuracy,
-                }
-                for fk in EVAL_FIELDS
-            },
-            "rows": state.rows,
-            "errors": state.errors,
-        }
+        out = json_payload(
+            args.dataset.resolve(),
+            args.color_mode,
+            args.text_match,
+            state,
+        )
         args.output_json.parent.mkdir(parents=True, exist_ok=True)
         args.output_json.write_text(json.dumps(out, indent=2), encoding="utf-8")
         print()
