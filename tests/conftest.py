@@ -21,6 +21,7 @@ if str(_BACKEND) not in sys.path:
 _fd, _TEST_DB_PATH = tempfile.mkstemp(suffix=".sqlite")
 os.close(_fd)
 os.environ["DATABASE_URL"] = f"sqlite:///{_TEST_DB_PATH}"
+os.environ["FASHION_GARMENT_SKIP_SEED"] = "1"
 
 from fastapi.testclient import TestClient  # noqa: E402
 from main import app  # noqa: E402

@@ -43,6 +43,7 @@ services:
       dockerfile: Dockerfile.test
     environment:
       DATABASE_URL: sqlite:////tmp/pytest.sqlite
+      FASHION_GARMENT_SKIP_SEED: "1"
     command: ["pytest", "tests/", "-q"]
 
 volumes:

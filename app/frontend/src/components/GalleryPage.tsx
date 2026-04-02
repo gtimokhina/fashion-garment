@@ -243,8 +243,10 @@ export default function GalleryPage() {
 
   const filtersActive = useMemo(() => {
     const meta = FILTER_PARAM_KEYS.some((k) => filters[k]?.trim());
-    return meta || debouncedQ.trim() !== "" || semanticSearch;
-  }, [filters, debouncedQ, semanticSearch]);
+    // Semantic mode only changes ranking when q is non-empty; ignore the checkbox alone.
+    const queryActive = debouncedQ.trim() !== "";
+    return meta || queryActive;
+  }, [filters, debouncedQ]);
 
   function onAnnotationSaved(row: ImageItem) {
     setItems((prev) =>
@@ -458,9 +460,9 @@ export default function GalleryPage() {
                   >
                     upload
                   </Link>{" "}
-                  to add some (classification needs{" "}
+                  to add your own (classification needs{" "}
                   <code className="rounded bg-zinc-100 px-1 text-xs dark:bg-zinc-800">OPENAI_API_KEY</code>
-                  ). Fresh Docker volumes start with an empty library.
+                  ).
                 </>
               )}
             </p>

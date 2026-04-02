@@ -9,6 +9,7 @@ A small full-stack app for **fashion and retail teams** to collect inspiration i
 - **Problem:** Reference photos pile up in folders or chat threads; designers need quick recall by garment, palette, occasion, and their own tags—not only filenames.
 - **Approach:** Upload images through a web UI or API; each image gets a model-written **description**, JSON **metadata** (garment type, style, colors, occasion, etc., each with a **confidence**), and separate **annotations** (tags, notes, optional designer string). The gallery exposes filters, search, and optional embedding-backed ranking.
 - **Scope:** Single-user / small-team prototype: one SQLite database, local file storage, OpenAI for vision and embeddings. Not a multi-tenant production CDN.
+- **First-run gallery:** If the image table is **empty** when the API starts, it inserts **one bundled demo photo** and metadata so a fresh clone is not blank. Disable with **`FASHION_GARMENT_SKIP_SEED=1`** (tests set this automatically). If you wipe the DB/uploads and restart with an empty table, the seed runs again.
 
 ---
 
@@ -124,7 +125,7 @@ Use this path if you want to run the full stack **without installing Node or Pyt
    - **API docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
    - **Health:** [http://localhost:8000/health](http://localhost:8000/health)
 
-The gallery starts **empty** until you upload images. New Docker volumes have no prior data.
+On first API start, **one example image** is seeded when the library is empty (see overview). Add your own via **Upload**. New Docker volumes contain no data until containers run; the seed runs on the backend’s first startup after that.
 
 #### Environment variables (Docker)
 
@@ -176,7 +177,7 @@ To wipe the SQLite DB and all uploaded files from Docker volumes:
 docker compose down -v
 ```
 
-The next `docker compose up --build` creates fresh volumes (empty library).
+The next `docker compose up --build` creates fresh volumes; the first API startup seeds the demo image when the table is empty.
 
 #### Troubleshooting (Docker)
 
@@ -271,6 +272,7 @@ python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset --outpu
 |------|------|
 | [`app/frontend/`](app/frontend/) | Next.js UI (gallery, upload). |
 | [`app/backend/`](app/backend/) | FastAPI app, SQLAlchemy models, classifier, search, scripts. |
+| [`app/backend/seed_assets/`](app/backend/seed_assets/) | Bundled demo image for first-run gallery seed. |
 | [`eval/`](eval/README.md) | Offline classifier evaluation, optional LLM judge, Pexels helpers. |
 | [`eval/results/`](eval/results/README.md) | Pinned eval JSON + manifest for README baselines. |
 | [`tests/`](tests/) | Pytest: unit (JSON parse), integration (filters), e2e (mocked classify + upload). |

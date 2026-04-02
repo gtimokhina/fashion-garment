@@ -10,12 +10,14 @@ from models.database import init_db
 from routes.health import router as health_router
 from routes.images import router as images_router
 from services.config import get_cors_origins, upload_dir_path
+from services.seed_example_gallery import seed_example_if_empty
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     upload_dir_path().mkdir(parents=True, exist_ok=True)
     init_db()
+    seed_example_if_empty()
     yield
 
 
