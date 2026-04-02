@@ -48,7 +48,17 @@ A small full-stack app for **fashion and retail teams** to collect inspiration i
 
 ## Setup
 
-**Prerequisites:** Node.js 20+, Python 3.9+ (3.11+ recommended), an [OpenAI](https://platform.openai.com/) API key.
+**Prerequisites:** an [OpenAI](https://platform.openai.com/) API key for classification. For **local dev without Docker:** Node.js 20+ and Python 3.9+ (3.11+ recommended). To run everything in containers, you only need [Docker](#docker).
+
+### Environment (one file)
+
+Copy the repo root template and fill in secrets once:
+
+```bash
+cp .env.example .env   # at project root; OPENAI_API_KEY, optional OPENAI_MODEL, etc.
+```
+
+The backend reads **`.env` at the project root** first; an optional legacy **`app/backend/.env`** is only used if you still have one (missing keys are filled from it). You do not need any `.env` under `app/backend/` if the root file is complete. [Docker Compose](#docker) uses the same root `.env`.
 
 ### Backend
 
@@ -56,7 +66,6 @@ A small full-stack app for **fashion and retail teams** to collect inspiration i
 cd app/backend
 python3 -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env   # set OPENAI_API_KEY, optional OPENAI_MODEL, DATABASE_URL, CORS_ORIGINS
 uvicorn main:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -80,7 +89,103 @@ pip install -r app/backend/requirements.txt -r app/backend/requirements-dev.txt
 pytest
 ```
 
+### Docker
+
+Use this path if you want to run the full stack **without installing Node or Python** on your machine. You only need [Docker](https://docs.docker.com/get-docker/) (Docker Desktop on macOS/Windows, or Docker Engine + Compose on Linux) with **Compose v2** (`docker compose`, not the legacy `docker-compose` binary).
+
+#### Quick start
+
+1. Clone the repo and open the project root:
+
+   ```bash
+   git clone <repository-url> fashion-garment
+   cd fashion-garment
+   ```
+
+2. Create your environment file from the template (see [Environment (one file)](#environment-one-file)):
+
+   ```bash
+   cp .env.example .env
+   ```
+
+3. Edit **`.env`** in the repo root and set at least **`OPENAI_API_KEY`**. Uploads and classification will fail without it.
+
+4. Build images and start containers:
+
+   ```bash
+   docker compose up --build
+   ```
+
+   Add **`-d`** to run in the background (`docker compose up --build -d`).
+
+5. Open the app:
+
+   - **Web UI:** [http://localhost:3000](http://localhost:3000) (gallery on `/`, upload on `/upload`)
+   - **API docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
+   - **Health:** [http://localhost:8000/health](http://localhost:8000/health)
+
+The gallery starts **empty** until you upload images. New Docker volumes have no prior data.
+
+#### Environment variables (Docker)
+
+Compose reads **`.env`** from the **repo root** for variable substitution and passes the relevant values into containers. Common entries:
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `OPENAI_API_KEY` | Yes (for real uploads) | Vision classification and embeddings. |
+| `OPENAI_MODEL` | No | Defaults to `gpt-4o` in Compose. |
+| `NEXT_PUBLIC_API_URL` | No | **URL the browser uses** to call the API. Use `http://localhost:8000` when you open the UI at `http://localhost:3000` on the same machine. If you publish the API on another host or port, set this to match **before** building the frontend image. |
+| `BACKEND_PORT` | No | Host port for the API (default `8000`). |
+| `FRONTEND_PORT` | No | Host port for Next.js (default `3000`). |
+| `CORS_ORIGINS` | No | Comma-separated origins allowed by the API; include the exact UI origin (e.g. `http://localhost:3000`). |
+
+**Important:** `NEXT_PUBLIC_*` is **baked in at image build time** for the frontend. After changing `NEXT_PUBLIC_API_URL` (or switching host/port), rebuild the frontend:
+
+```bash
+docker compose build frontend --no-cache
+docker compose up
+```
+
+Backend-only env changes (e.g. `OPENAI_API_KEY`) take effect on **container restart**; `docker compose up --build` is enough if you did not change build args.
+
+#### Images and compose file
+
+- **`app/backend/Dockerfile`** — Python 3.11, FastAPI, dependencies from `requirements.txt`; SQLite at `/data/app.db`, uploads under `/app/uploads`.
+- **`app/frontend/Dockerfile`** — multi-stage Node 20 build, Next.js **`output: "standalone"`**, production server on port 3000.
+- **`docker-compose.yml`** — defines `backend` and `frontend`, plus named volumes **`backend_data`** (database) and **`backend_uploads`** (image files). Data survives `docker compose stop`; removing volumes deletes the library.
+
+#### Useful commands
+
+```bash
+# Stop containers (keeps volumes)
+docker compose down
+
+# View logs (foreground run logs to the terminal; with -d use:)
+docker compose logs -f backend
+docker compose logs -f frontend
+
+# Run the pytest suite in a one-off container
+docker compose --profile test run --rm test
+```
+
+#### Resetting data
+
+To wipe the SQLite DB and all uploaded files from Docker volumes:
+
+```bash
+docker compose down -v
+```
+
+The next `docker compose up --build` creates fresh volumes (empty library).
+
+#### Troubleshooting (Docker)
+
+- **UI shows “API unreachable” or uploads fail:** Confirm `OPENAI_API_KEY` in root `.env`, restart with `docker compose up`, and check `docker compose logs backend`.
+- **Gallery loads but images are broken:** Ensure `NEXT_PUBLIC_API_URL` points to where **your browser** can reach the API (usually `http://localhost:8000` if ports are mapped as defaults), then rebuild the frontend as above.
+- **CORS errors in the browser:** Add your exact UI URL (including port) to `CORS_ORIGINS` in `.env` and restart the backend container.
+
 ---
+
 
 ## API endpoints
 
@@ -169,6 +274,7 @@ python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset --outpu
 | [`eval/`](eval/README.md) | Offline classifier evaluation, optional LLM judge, Pexels helpers. |
 | [`eval/results/`](eval/results/README.md) | Pinned eval JSON + manifest for README baselines. |
 | [`tests/`](tests/) | Pytest: unit (JSON parse), integration (filters), e2e (mocked classify + upload). |
+| [`docker-compose.yml`](docker-compose.yml) | Orchestrates `backend` + `frontend`; [`Dockerfile.test`](Dockerfile.test) for CI-style pytest. |
 
 ---
 

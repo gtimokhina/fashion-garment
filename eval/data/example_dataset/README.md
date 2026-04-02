@@ -59,4 +59,4 @@ cd app/backend && source .venv/bin/activate   # optional
 python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset
 ```
 
-Requires `OPENAI_API_KEY` (e.g. in `app/backend/.env`).
+Requires `OPENAI_API_KEY` (e.g. in the repo root `.env`).

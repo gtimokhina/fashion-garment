@@ -1,0 +1,17 @@
+# Backend pytest suite (repo root context)
+FROM python:3.11-slim-bookworm
+
+WORKDIR /workspace
+
+COPY app/backend/requirements.txt app/backend/requirements-dev.txt ./app/backend/
+RUN pip install --no-cache-dir \
+    -r app/backend/requirements.txt \
+    -r app/backend/requirements-dev.txt
+
+COPY pytest.ini ./
+COPY tests ./tests
+COPY app/backend ./app/backend
+
+ENV PYTHONPATH=/workspace/app/backend
+
+CMD ["pytest", "tests/", "-q"]

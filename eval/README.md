@@ -26,7 +26,7 @@ Deterministic **string rules** can miss synonyms (“navy” vs “dark blue”)
 | **`text`** | Field name, gold, predicted, plus the classifier’s **description** (no extra image) | 4 × N extra chat calls |
 | **`vision`** | Same labels plus the **image** (low detail) | 4 × N extra **vision** calls |
 
-Use **`EVAL_JUDGE_MODEL`** in `app/backend/.env` to pick a cheaper judge (e.g. `gpt-4o-mini`); it defaults to **`OPENAI_MODEL`**. Judge results appear in a **second** summary table and in each row under `fields.<name>.judge` (`equivalent`, `confidence`, `note`).
+Use **`EVAL_JUDGE_MODEL`** in the repo root `.env` to pick a cheaper judge (e.g. `gpt-4o-mini`); it defaults to **`OPENAI_MODEL`**. Judge results appear in a **second** summary table and in each row under `fields.<name>.judge` (`equivalent`, `confidence`, `note`).
 
 ```bash
 python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset --llm-judge text
@@ -62,7 +62,7 @@ python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset
 
 After each run, the CLI prints a **performance report** (error counts by attribute, where the model does well vs struggles) and **incorrect predictions grouped by field** (with examples). Full failure lists are always included in **`--output-json`** (`failures_string`, `failure_counts_string`, and `failures_judge` when applicable).
 
-**Environment:** `OPENAI_API_KEY` and optional `OPENAI_MODEL` in `app/backend/.env` (loaded when the backend package initializes). Optional **`EVAL_JUDGE_MODEL`** for the judge only.
+**Environment:** `OPENAI_API_KEY` and optional `OPENAI_MODEL` in the repo root `.env` (loaded when the backend package initializes). Optional **`EVAL_JUDGE_MODEL`** for the judge only.
 
 ## Code layout
 

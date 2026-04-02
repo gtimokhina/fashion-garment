@@ -1,0 +1,12 @@
+.git
+**/.venv
+**/node_modules
+**/.next
+**/__pycache__
+*.py[cod]
+.env
+.env.*
+!.env.example
+**/uploads
+**/*.db
+eval/data/example_dataset/images

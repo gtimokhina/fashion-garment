@@ -92,7 +92,7 @@ def _get_client() -> OpenAI:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key or not api_key.strip():
         raise RuntimeError(
-            "OPENAI_API_KEY is not set. Add it to app/backend/.env (do not commit secrets)."
+            "OPENAI_API_KEY is not set. Add it to the repo root .env (do not commit secrets)."
         )
     return OpenAI(api_key=api_key.strip())
 

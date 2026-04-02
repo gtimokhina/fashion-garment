@@ -2,7 +2,7 @@
 OpenAI GPT-4o vision classification for garment / fashion inspiration images.
 
 ``OPENAI_API_KEY`` and optional ``OPENAI_MODEL`` are read from the process
-environment. Values can be set in ``app/backend/.env`` (loaded automatically
+environment. Values can be set in the repo root ``.env`` or optional ``app/backend/.env`` (loaded automatically
 via ``services.config``).
 
 Structured attributes are stored as ``{"value": str, "confidence": float}`` per field.
@@ -177,7 +177,7 @@ def _get_client() -> OpenAI:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key or not api_key.strip():
         raise RuntimeError(
-            "OPENAI_API_KEY is not set. Add it to the environment or app/backend/.env (do not commit secrets)."
+            "OPENAI_API_KEY is not set. Add it to the environment or the repo root .env (do not commit secrets)."
         )
     return OpenAI(api_key=api_key.strip())
 

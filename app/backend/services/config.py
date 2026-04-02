@@ -5,7 +5,10 @@ from typing import Optional
 from dotenv import load_dotenv
 
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
-load_dotenv(BACKEND_ROOT / ".env")
+REPO_ROOT = BACKEND_ROOT.parent.parent
+# Single source of truth: repo root `.env`. Optional `app/backend/.env` fills missing keys (legacy).
+load_dotenv(REPO_ROOT / ".env", override=False)
+load_dotenv(BACKEND_ROOT / ".env", override=False)
 
 
 def get_database_url() -> str:

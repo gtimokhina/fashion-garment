@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { getApiBase } from "@/lib/api";
+import { getApiBase, imagePublicUrl } from "@/lib/api";
 import { getDesignerName, getDesignerNotes, getDesignerTags } from "@/lib/annotations";
 import { AnnotationEditModal } from "@/components/AnnotationEditModal";
 import { Spinner } from "@/components/Spinner";
@@ -56,19 +56,6 @@ const FILTER_PARAM_KEYS = [
 ] as const;
 
 type FilterParamKey = (typeof FILTER_PARAM_KEYS)[number];
-
-const FACET_OPTIONS_KEY: Record<FilterParamKey, keyof Facets> = {
-  garment_type: "garment_types",
-  style: "styles",
-  material: "materials",
-  color_palette: "color_palettes",
-  pattern: "patterns",
-  season: "seasons",
-  occasion: "occasions",
-  consumer_profile: "consumer_profiles",
-  trend_notes: "trend_notes",
-  location_context: "location_contexts",
-};
 
 function emptyFilters(): Record<FilterParamKey, string> {
   return Object.fromEntries(FILTER_PARAM_KEYS.map((k) => [k, ""])) as Record<FilterParamKey, string>;
@@ -310,7 +297,7 @@ export default function GalleryPage() {
               onChange={(e) => setSemanticSearch(e.target.checked)}
               className="rounded border-zinc-400 text-blue-600 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-900"
             />
-            <span title="Hybrid ranking: 0.5×keyword (description/notes/tags substring) + 0.5×embedding cosine. Tunable via HYBRID_* and SEMANTIC_* in backend .env.">
+            <span title="Hybrid ranking: 0.5×keyword (description/notes/tags substring) + 0.5×embedding cosine. Tunable via HYBRID_* and SEMANTIC_* in the repo root `.env`.">
               Semantic search
             </span>
           </label>
@@ -443,19 +430,39 @@ export default function GalleryPage() {
         {items && items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/50 py-20 text-center dark:border-zinc-600 dark:bg-zinc-900/30">
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              No images match.{" "}
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="font-medium text-blue-600 hover:underline dark:text-blue-400"
-              >
-                Reset filters
-              </button>{" "}
-              or{" "}
-              <Link href="/upload" className="font-medium text-blue-600 hover:underline dark:text-blue-400">
-                upload
-              </Link>
-              .
+              {filtersActive ? (
+                <>
+                  No images match these filters.{" "}
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    Reset filters
+                  </button>{" "}
+                  or{" "}
+                  <Link
+                    href="/upload"
+                    className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    upload
+                  </Link>
+                  .
+                </>
+              ) : (
+                <>
+                  No images in the library yet —{" "}
+                  <Link
+                    href="/upload"
+                    className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                  >
+                    upload
+                  </Link>{" "}
+                  to add some (classification needs{" "}
+                  <code className="rounded bg-zinc-100 px-1 text-xs dark:bg-zinc-800">OPENAI_API_KEY</code>
+                  ). Fresh Docker volumes start with an empty library.
+                </>
+              )}
             </p>
           </div>
         ) : null}
@@ -511,7 +518,7 @@ export default function GalleryPage() {
                   <div className="aspect-[4/3] overflow-hidden bg-zinc-100 dark:bg-zinc-900">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={img.url}
+                      src={imagePublicUrl(img.file_path)}
                       alt={altFromDescription(img.description)}
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                       loading="lazy"

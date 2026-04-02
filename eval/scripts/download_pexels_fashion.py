@@ -5,7 +5,7 @@ Download fashion stock photos using the official Pexels API.
 The website https://www.pexels.com/search/fashion/ is not meant for bulk scraping;
 use the free API instead: https://www.pexels.com/api/
 
-  # Key is read from app/backend/.env (PEXELS_API_KEY) if set there, else from the environment.
+  # PEXELS_API_KEY is read from the repo root .env, then optional app/backend/.env, else the environment.
   python3 eval/scripts/download_pexels_fashion.py
 
 Optional: --count 50 --query fashion --out eval/data/pexels_fashion
@@ -27,6 +27,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "eval" / "data" / "pexels_fashion"
 API_SEARCH = "https://api.pexels.com/v1/search"
+ROOT_ENV = REPO_ROOT / ".env"
 BACKEND_ENV = REPO_ROOT / "app" / "backend" / ".env"
 
 # Pexels sits behind Cloudflare. The default urllib User-Agent (Python-urllib/…) is often
@@ -37,12 +38,12 @@ _CLIENT_UA = (
 )
 
 
-def load_backend_dotenv() -> None:
-    """Load KEY=value pairs from app/backend/.env into os.environ if not already set."""
-    if not BACKEND_ENV.is_file():
+def _load_dotenv_file(path: Path) -> None:
+    """Load KEY=value pairs from a .env file into os.environ if not already set."""
+    if not path.is_file():
         return
     try:
-        text = BACKEND_ENV.read_text(encoding="utf-8")
+        text = path.read_text(encoding="utf-8")
     except OSError:
         return
     if text.startswith("\ufeff"):
@@ -64,6 +65,12 @@ def load_backend_dotenv() -> None:
             val = val[1:-1]
         if key not in os.environ:
             os.environ[key] = val
+
+
+def load_repo_dotenv() -> None:
+    """Load repo root `.env`, then optional `app/backend/.env` (same precedence as the backend)."""
+    _load_dotenv_file(ROOT_ENV)
+    _load_dotenv_file(BACKEND_ENV)
 
 
 def fetch_page(query: str, per_page: int, page: int, api_key: str) -> dict:
@@ -114,11 +121,11 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    load_backend_dotenv()
+    load_repo_dotenv()
     api_key = (os.environ.get("PEXELS_API_KEY") or "").strip()
     if not api_key:
         print(
-            "Missing PEXELS_API_KEY. Add it to app/backend/.env or export it. "
+            "Missing PEXELS_API_KEY. Add it to the repo root `.env` or export it. "
             "Create a free key at https://www.pexels.com/api/",
             file=sys.stderr,
         )
