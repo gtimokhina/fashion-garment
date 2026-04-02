@@ -5,7 +5,7 @@ Download fashion stock photos using the official Pexels API.
 The website https://www.pexels.com/search/fashion/ is not meant for bulk scraping;
 use the free API instead: https://www.pexels.com/api/
 
-  # PEXELS_API_KEY is read from the repo root .env, then optional app/backend/.env, else the environment.
+  # PEXELS_API_KEY is read from the repo root .env, else the environment.
   python3 eval/scripts/download_pexels_fashion.py
 
 Optional: --count 50 --query fashion --out eval/data/pexels_fashion
@@ -28,7 +28,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUT = REPO_ROOT / "eval" / "data" / "pexels_fashion"
 API_SEARCH = "https://api.pexels.com/v1/search"
 ROOT_ENV = REPO_ROOT / ".env"
-BACKEND_ENV = REPO_ROOT / "app" / "backend" / ".env"
 
 # Pexels sits behind Cloudflare. The default urllib User-Agent (Python-urllib/…) is often
 # blocked with HTTP 403 and body "error code: 1010". Use a normal browser-like UA.
@@ -68,9 +67,8 @@ def _load_dotenv_file(path: Path) -> None:
 
 
 def load_repo_dotenv() -> None:
-    """Load repo root `.env`, then optional `app/backend/.env` (same precedence as the backend)."""
+    """Load repo root `.env` into os.environ if keys are not already set (same as the backend)."""
     _load_dotenv_file(ROOT_ENV)
-    _load_dotenv_file(BACKEND_ENV)
 
 
 def fetch_page(query: str, per_page: int, page: int, api_key: str) -> dict:

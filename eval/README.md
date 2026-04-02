@@ -41,7 +41,7 @@ See **[`data/example_dataset/README.md`](data/example_dataset/README.md)** and *
 
 ## How to run
 
-From `app/backend` (venv recommended so `openai` and `.env` match):
+From `app/backend` (venv recommended; the backend loads the **repo root** `.env`):
 
 ```bash
 python3 ../../eval/run_eval.py --dataset ../../eval/data/example_dataset

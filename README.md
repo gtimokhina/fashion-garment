@@ -59,7 +59,7 @@ Copy the repo root template and fill in secrets once:
 cp .env.example .env   # at project root; OPENAI_API_KEY, optional OPENAI_MODEL, etc.
 ```
 
-The backend reads **`.env` at the project root** first; an optional legacy **`app/backend/.env`** is only used if you still have one (missing keys are filled from it). You do not need any `.env` under `app/backend/` if the root file is complete. [Docker Compose](#docker) uses the same root `.env`.
+The backend reads **`.env` at the project root**. [Docker Compose](#docker) uses the same root `.env`.
 
 ### Backend
 

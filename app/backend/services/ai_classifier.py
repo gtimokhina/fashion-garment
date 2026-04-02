@@ -2,8 +2,7 @@
 OpenAI GPT-4o vision classification for garment / fashion inspiration images.
 
 ``OPENAI_API_KEY`` and optional ``OPENAI_MODEL`` are read from the process
-environment. Values can be set in the repo root ``.env`` or optional ``app/backend/.env`` (loaded automatically
-via ``services.config``).
+environment. Values can be set in the repo root ``.env`` (loaded automatically via ``services.config``).
 
 Structured attributes are stored as ``{"value": str, "confidence": float}`` per field.
 If the model omits ``confidence``, :func:`services.metadata_fields.heuristic_confidence_for_value`
